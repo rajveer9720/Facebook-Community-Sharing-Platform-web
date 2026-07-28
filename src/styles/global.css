@@ -1,0 +1,23 @@
+:root {
+  color-scheme: light;
+  --app-bg: #f6f7fb;
+  --app-text: #172033;
+}
+
+body {
+  margin: 0;
+  background: var(--app-bg);
+  color: var(--app-text);
+  font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
