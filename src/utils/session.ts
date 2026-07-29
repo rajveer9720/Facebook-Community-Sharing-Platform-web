@@ -1,5 +1,4 @@
 import type { AuthUser } from '@/types/user';
-import { MockApiError } from './errors';
 
 const STORAGE_KEY = 'fcsp.session';
 
@@ -25,16 +24,4 @@ export function writeSession(session: StoredSession): void {
 
 export function clearSession(): void {
   localStorage.removeItem(STORAGE_KEY);
-}
-
-export function requireSession(): StoredSession {
-  const session = readSession();
-  if (!session) throw new MockApiError(401, 'Authentication required');
-  return session;
-}
-
-export function requireRole(session: StoredSession, role: AuthUser['role']): void {
-  if (session.user.role !== role) {
-    throw new MockApiError(403, 'Insufficient permissions for this action');
-  }
 }
