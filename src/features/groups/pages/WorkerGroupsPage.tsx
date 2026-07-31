@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, Badge, Button, Card, Col, Form as BsForm, Modal, Row, Spinner, Stack } from 'react-bootstrap';
+import { Sparkles, Clock3 } from 'lucide-react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { useGetWorkerGroupLibraryQuery, useSubmitGroupDiscoveryMutation } from '@/features/groups/groupsApi';
@@ -9,15 +10,29 @@ interface DiscoveryFormValues {
   name: string;
   category: string;
   country: string;
+  url: string;
+  language: string;
+  privacyType: string;
   memberCount: string;
 }
 
-const initialValues: DiscoveryFormValues = { name: '', category: 'Technology', country: '', memberCount: '' };
+const initialValues: DiscoveryFormValues = {
+  name: '',
+  category: 'Technology',
+  country: '',
+  url: '',
+  language: 'English',
+  privacyType: 'PUBLIC',
+  memberCount: '',
+};
 
 const validationSchema = Yup.object({
   name: Yup.string().required('Group name is required'),
   category: Yup.string().required(),
   country: Yup.string().required('Country is required'),
+  url: Yup.string().url('Enter a valid URL').required('Group URL is required'),
+  language: Yup.string().required('Language is required'),
+  privacyType: Yup.string().required('Privacy type is required'),
   memberCount: Yup.number().typeError('Enter a whole number').integer().positive().required('Member count is required'),
 });
 
@@ -32,6 +47,9 @@ export default function WorkerGroupsPage() {
       name: values.name,
       category: values.category,
       country: values.country,
+      url: values.url,
+      language: values.language,
+      privacyType: values.privacyType,
       memberCount: Number(values.memberCount),
     }).unwrap();
     setSuccessMessage(`"${values.name}" was submitted for moderation review.`);
@@ -60,6 +78,30 @@ export default function WorkerGroupsPage() {
         </Alert>
       )}
 
+      <Card className="border-0 shadow-sm rounded-4 mt-3">
+        <Card.Body className="p-4">
+          <div className="d-flex align-items-center gap-2 mb-3">
+            <Sparkles className="text-primary" size={18} />
+            <h2 className="fs-6 fw-semibold mb-0">Recommended groups</h2>
+          </div>
+          <Row className="g-3">
+            {library?.slice(0, 3).map((entry) => (
+              <Col key={`${entry.id}-rec`} md={4}>
+                <div className="rounded-4 border p-3 h-100">
+                  <p className="fw-semibold mb-1">{entry.group.name}</p>
+                  <p className="text-secondary small mb-1">{entry.group.category} · {entry.group.country}</p>
+                  <p className="text-secondary small mb-2">{entry.group.language} · {entry.group.privacyType}</p>
+                  <div className="d-flex align-items-center gap-2 text-secondary small">
+                    <Clock3 size={14} />
+                    <span>{entry.availableAt ? 'Cooldown active' : 'Ready now'}</span>
+                  </div>
+                </div>
+              </Col>
+            ))}
+          </Row>
+        </Card.Body>
+      </Card>
+
       {isLoading ? (
         <Spinner animation="border" size="sm" className="mt-3" />
       ) : (
@@ -74,8 +116,11 @@ export default function WorkerGroupsPage() {
                       <div>
                         <h2 className="fs-5 fw-bold mb-0">{entry.group.name}</h2>
                         <p className="text-secondary small mb-0">
-                          {entry.group.category} &middot; {entry.group.country}
+                          {entry.group.category} &middot; {entry.group.country} &middot; {entry.group.language}
                         </p>
+                        <a href={entry.group.url} target="_blank" rel="noreferrer" className="small text-decoration-none">
+                          {entry.group.url}
+                        </a>
                       </div>
                       <Badge bg="success" className="bg-success-subtle text-success-emphasis fw-bold px-3 py-2 rounded-pill">
                         Quality {entry.group.qualityScore}
@@ -96,7 +141,12 @@ export default function WorkerGroupsPage() {
                           {available ? 'Available now' : 'Available soon'}
                         </p>
                       </Col>
+                      <Col xs={6} md={4}>
+                        <p className="text-secondary mb-0">Privacy</p>
+                        <p className="fw-bold mb-0">{entry.group.privacyType}</p>
+                      </Col>
                     </Row>
+                    {entry.group.blacklisted && <p className="text-danger small mt-2 mb-0">Blacklisted group: avoid assignment.</p>}
                   </Card.Body>
                 </Card>
               </Col>
@@ -135,6 +185,25 @@ export default function WorkerGroupsPage() {
                   <BsForm.Label className="fw-semibold small">Country</BsForm.Label>
                   <Field name="country" as={BsForm.Control} />
                   <ErrorMessage name="country" component="div" className="text-danger small mt-1" />
+                </BsForm.Group>
+                <BsForm.Group className="mb-3" controlId="discoveryUrl">
+                  <BsForm.Label className="fw-semibold small">Group URL</BsForm.Label>
+                  <Field name="url" as={BsForm.Control} placeholder="https://facebook.com/groups/example" />
+                  <ErrorMessage name="url" component="div" className="text-danger small mt-1" />
+                </BsForm.Group>
+                <BsForm.Group className="mb-3" controlId="discoveryLanguage">
+                  <BsForm.Label className="fw-semibold small">Language</BsForm.Label>
+                  <Field name="language" as={BsForm.Control} />
+                  <ErrorMessage name="language" component="div" className="text-danger small mt-1" />
+                </BsForm.Group>
+                <BsForm.Group className="mb-3" controlId="discoveryPrivacyType">
+                  <BsForm.Label className="fw-semibold small">Privacy type</BsForm.Label>
+                  <Field name="privacyType" as={BsForm.Select}>
+                    <option value="PUBLIC">PUBLIC</option>
+                    <option value="PRIVATE">PRIVATE</option>
+                    <option value="HIDDEN">HIDDEN</option>
+                  </Field>
+                  <ErrorMessage name="privacyType" component="div" className="text-danger small mt-1" />
                 </BsForm.Group>
                 <BsForm.Group controlId="discoveryMemberCount">
                   <BsForm.Label className="fw-semibold small">Member count</BsForm.Label>

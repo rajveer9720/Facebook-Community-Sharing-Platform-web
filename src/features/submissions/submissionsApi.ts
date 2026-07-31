@@ -1,5 +1,12 @@
 import { baseApi } from '@/api/baseApi';
-import type { CreateSubmissionRequest, ReviewSubmissionRequest, Submission, SubmissionStatus } from '@/types/submission';
+import type {
+  CreateProofUploadUrlRequest,
+  CreateProofUploadUrlResponse,
+  CreateSubmissionRequest,
+  ReviewSubmissionRequest,
+  Submission,
+  SubmissionStatus,
+} from '@/types/submission';
 
 export interface GetSubmissionsParams {
   workerId?: string;
@@ -23,6 +30,9 @@ export const submissionsApi = baseApi.injectEndpoints({
           ? [...result.map((s) => ({ type: 'Submission' as const, id: s.id })), { type: 'Submission' as const, id: 'LIST' }]
           : [{ type: 'Submission' as const, id: 'LIST' }],
     }),
+    createProofUploadUrl: builder.mutation<CreateProofUploadUrlResponse, CreateProofUploadUrlRequest>({
+      query: (body) => ({ url: '/submissions/proof-upload-url', method: 'POST', body }),
+    }),
     createSubmission: builder.mutation<Submission, CreateSubmissionRequest>({
       query: (body) => ({ url: '/submissions', method: 'POST', body }),
       invalidatesTags: [{ type: 'Submission', id: 'LIST' }, { type: 'Wallet', id: 'ME' }],
@@ -39,4 +49,9 @@ export const submissionsApi = baseApi.injectEndpoints({
   overrideExisting: false,
 });
 
-export const { useGetSubmissionsQuery, useCreateSubmissionMutation, useReviewSubmissionMutation } = submissionsApi;
+export const {
+  useGetSubmissionsQuery,
+  useCreateProofUploadUrlMutation,
+  useCreateSubmissionMutation,
+  useReviewSubmissionMutation,
+} = submissionsApi;

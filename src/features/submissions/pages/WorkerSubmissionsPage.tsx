@@ -1,8 +1,15 @@
-import { Card, Spinner, Table } from 'react-bootstrap';
+import { Card, Col, Row, Spinner, Table } from 'react-bootstrap';
+import { ClipboardCheck, Clock3, CheckCircle2, XCircle } from 'lucide-react';
 import { useAppSelector } from '@/app/hooks';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { useGetSubmissionsQuery } from '@/features/submissions/submissionsApi';
 import { formatMoney, formatDate } from '@/utils/format';
+
+function toPercent(value: number | null): string {
+  if (value === null) return '—';
+  const normalized = value <= 1 ? Math.round(value * 100) : Math.round(value);
+  return `${normalized}%`;
+}
 
 export default function WorkerSubmissionsPage() {
   const user = useAppSelector((state) => state.auth.user);
@@ -13,6 +20,53 @@ export default function WorkerSubmissionsPage() {
       <p className="text-primary fw-semibold mb-1">Your activity</p>
       <h1 className="fs-3 fw-bold">My submissions</h1>
       <p className="text-secondary">Track pending, manual-review, approved and rejected proofs here.</p>
+
+      <Row className="g-3 mt-1">
+        <Col sm={6} md={3}>
+          <Card className="border-0 shadow-sm rounded-4 h-100">
+            <Card.Body className="p-4">
+              <div className="d-flex align-items-center gap-2 text-primary mb-2">
+                <Clock3 size={16} />
+                <span className="small fw-semibold">Pending</span>
+              </div>
+              <p className="fs-4 fw-bold mb-0">{submissions?.filter((item) => item.status === 'PENDING' || item.status === 'MANUAL_REVIEW').length ?? 0}</p>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col sm={6} md={3}>
+          <Card className="border-0 shadow-sm rounded-4 h-100">
+            <Card.Body className="p-4">
+              <div className="d-flex align-items-center gap-2 text-success mb-2">
+                <CheckCircle2 size={16} />
+                <span className="small fw-semibold">Approved</span>
+              </div>
+              <p className="fs-4 fw-bold mb-0">{submissions?.filter((item) => item.status === 'APPROVED').length ?? 0}</p>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col sm={6} md={3}>
+          <Card className="border-0 shadow-sm rounded-4 h-100">
+            <Card.Body className="p-4">
+              <div className="d-flex align-items-center gap-2 text-danger mb-2">
+                <XCircle size={16} />
+                <span className="small fw-semibold">Rejected</span>
+              </div>
+              <p className="fs-4 fw-bold mb-0">{submissions?.filter((item) => item.status === 'REJECTED').length ?? 0}</p>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col sm={6} md={3}>
+          <Card className="border-0 shadow-sm rounded-4 h-100">
+            <Card.Body className="p-4">
+              <div className="d-flex align-items-center gap-2 text-primary mb-2">
+                <ClipboardCheck size={16} />
+                <span className="small fw-semibold">Evidence</span>
+              </div>
+              <p className="fs-4 fw-bold mb-0">{submissions?.length ?? 0}</p>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
       <Card className="border-0 shadow-sm rounded-4 mt-3">
         <Card.Body className="p-0">
@@ -29,6 +83,8 @@ export default function WorkerSubmissionsPage() {
                     <th>Group</th>
                     <th>Submitted</th>
                     <th>Reward</th>
+                    <th>AI confidence</th>
+                    <th>Fraud</th>
                     <th>Status</th>
                     <th className="pe-4">Note</th>
                   </tr>
@@ -40,6 +96,14 @@ export default function WorkerSubmissionsPage() {
                       <td>{submission.groupName}</td>
                       <td>{formatDate(submission.submittedAt)}</td>
                       <td>{formatMoney(submission.rewardMinor)}</td>
+                      <td>{toPercent(submission.verificationConfidence)}</td>
+                      <td>
+                        {submission.flaggedForFraud ? (
+                          <span className="text-danger fw-semibold">Flagged ({Math.round((submission.fraudRiskScore ?? 0) * 100)}%)</span>
+                        ) : (
+                          <span className="text-success">Clear</span>
+                        )}
+                      </td>
                       <td>
                         <StatusBadge status={submission.status} />
                       </td>

@@ -1,12 +1,16 @@
 export const ROUTES = {
   home: '/',
   login: '/login',
+  loginWorker: '/login/worker',
+  loginAdmin: '/login/admin',
   worker: {
     root: '/worker',
+    profile: '/worker/profile',
     campaigns: '/worker/campaigns',
     submissions: '/worker/submissions',
     groups: '/worker/groups',
     wallet: '/worker/wallet',
+    notifications: '/worker/notifications',
     leaderboard: '/worker/leaderboard',
   },
   admin: {
@@ -17,5 +21,6 @@ export const ROUTES = {
     groups: '/admin/groups',
     withdrawals: '/admin/withdrawals',
     analytics: '/admin/analytics',
+    fraud: '/admin/fraud',
   },
 } as const;

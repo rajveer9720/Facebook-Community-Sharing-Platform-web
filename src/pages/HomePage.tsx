@@ -14,11 +14,11 @@ export default function HomePage() {
             mobile-first workflow.
           </p>
           <Stack direction="horizontal" gap={3} className="mt-4">
-            <Link className="btn btn-primary rounded-3 px-4" to={ROUTES.login}>
-              Sign in
+            <Link className="btn btn-primary rounded-3 px-4" to={ROUTES.loginWorker}>
+              Worker sign in
             </Link>
-            <Link className="btn btn-outline-secondary rounded-3 px-4" to={ROUTES.worker.root}>
-              Worker preview
+            <Link className="btn btn-outline-secondary rounded-3 px-4" to={ROUTES.loginAdmin}>
+              Admin sign in
             </Link>
           </Stack>
         </Card.Body>

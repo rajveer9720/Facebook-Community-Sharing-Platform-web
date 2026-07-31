@@ -1,5 +1,5 @@
 import { Badge, Card, Stack } from 'react-bootstrap';
-import { CalendarDays, CircleDollarSign, Users } from 'lucide-react';
+import { CalendarDays, CircleDollarSign, Users, Sparkles } from 'lucide-react';
 
 interface CampaignCardProps {
   name: string;
@@ -21,9 +21,16 @@ export function CampaignCard({ name, category, reward, period, workers, status =
             </Badge>
             <h3 className="mt-3 fs-5 fw-bold">{name}</h3>
           </div>
-          <Badge bg="success" className="bg-success-subtle text-success-emphasis fw-semibold rounded-pill px-2 py-1">
+          <Badge
+            bg={status === 'PAUSED' ? 'warning' : status === 'DRAFT' ? 'secondary' : 'success'}
+            className={status === 'PAUSED' ? 'bg-warning-subtle text-warning-emphasis' : status === 'DRAFT' ? 'bg-secondary-subtle text-secondary-emphasis' : 'bg-success-subtle text-success-emphasis'}
+          >
             {status}
           </Badge>
+        </div>
+        <div className="d-flex align-items-center gap-2 mt-3 text-primary small fw-semibold">
+          <Sparkles size={14} />
+          <span>Suggested for active workers</span>
         </div>
         <Stack direction="horizontal" gap={4} className="mt-4 flex-wrap text-secondary small">
           <span className="d-flex align-items-center gap-2">

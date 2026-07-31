@@ -13,6 +13,6 @@ export const baseApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Campaign', 'Group', 'GroupLibrary', 'Submission', 'Wallet', 'Withdrawal', 'Leaderboard'],
+  tagTypes: ['Campaign', 'Group', 'GroupLibrary', 'Submission', 'Wallet', 'Withdrawal', 'Leaderboard', 'Notification', 'WorkerPerformance'],
   endpoints: () => ({}),
 });

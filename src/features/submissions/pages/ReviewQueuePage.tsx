@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Button, Card, Col, Row, Spinner, Stack, Table } from 'react-bootstrap';
+import { Alert, Badge, Button, Card, Col, Row, Spinner, Stack, Table } from 'react-bootstrap';
+import { ShieldCheck, FileSearch, Sparkles } from 'lucide-react';
 import { StatCard } from '@/components/common/StatCard';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { useGetSubmissionsQuery, useReviewSubmissionMutation } from '@/features/submissions/submissionsApi';
@@ -11,13 +12,26 @@ function isToday(iso: string | null): boolean {
   return new Date(iso).toDateString() === new Date().toDateString();
 }
 
+function toPercent(value: number | null): number {
+  if (value === null) return 0;
+  return value <= 1 ? Math.round(value * 100) : Math.round(value);
+}
+
 export default function ReviewQueuePage() {
   const { data: submissions, isLoading } = useGetSubmissionsQuery();
   const [reviewSubmission, { isLoading: isReviewing }] = useReviewSubmissionMutation();
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [error, setError] = useState('');
 
-  const queue = submissions?.filter((s) => s.status === 'PENDING' || s.status === 'MANUAL_REVIEW') ?? [];
+  const queue =
+    submissions
+      ?.filter((s) => s.status === 'PENDING' || s.status === 'MANUAL_REVIEW')
+      .map((s) => ({
+        ...s,
+        confidence: toPercent(s.verificationConfidence),
+        explanation: s.verificationExplanation ?? 'Awaiting verification explanation from engine.',
+        riskFlag: s.flaggedForFraud || s.duplicateProofDetected || s.duplicateUrlDetected,
+      })) ?? [];
   const approvedToday = submissions?.filter((s) => s.status === 'APPROVED' && isToday(s.reviewedAt)).length ?? 0;
   const rejectedToday = submissions?.filter((s) => s.status === 'REJECTED' && isToday(s.reviewedAt)).length ?? 0;
 
@@ -64,6 +78,41 @@ export default function ReviewQueuePage() {
       )}
 
       <Card className="border-0 shadow-sm rounded-4 mt-4">
+        <Card.Body className="p-4">
+          <div className="d-flex align-items-center gap-2 mb-3">
+            <ShieldCheck className="text-primary" size={18} />
+            <h2 className="fs-5 fw-semibold mb-0">Verification assistant</h2>
+          </div>
+          <Row className="g-3">
+            <Col md={4}>
+              <div className="rounded-4 border p-3 h-100">
+                <div className="d-flex align-items-center gap-2 text-primary mb-2">
+                  <FileSearch size={16} />
+                  <span className="small fw-semibold">Proof review</span>
+                </div>
+                <p className="fw-semibold mb-0">Screenshot, URL and group evidence checked together</p>
+              </div>
+            </Col>
+            <Col md={4}>
+              <div className="rounded-4 border p-3 h-100">
+                <div className="d-flex align-items-center gap-2 text-primary mb-2">
+                  <Sparkles size={16} />
+                  <span className="small fw-semibold">AI confidence</span>
+                </div>
+                <p className="fw-semibold mb-0">High confidence items can be auto-routed for approval</p>
+              </div>
+            </Col>
+            <Col md={4}>
+              <div className="rounded-4 border p-3 h-100">
+                <p className="text-secondary small mb-1">Risk note</p>
+                <Badge bg="warning" className="bg-warning-subtle text-warning-emphasis">Manual review recommended</Badge>
+              </div>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
+
+      <Card className="border-0 shadow-sm rounded-4 mt-4">
         <Card.Body className="p-0">
           {isLoading ? (
             <div className="p-4">
@@ -81,6 +130,8 @@ export default function ReviewQueuePage() {
                     <th>Group</th>
                     <th>Proof</th>
                     <th>Reward</th>
+                    <th>AI score</th>
+                    <th>Decision insight</th>
                     <th>Status</th>
                     <th className="pe-4">Actions</th>
                   </tr>
@@ -98,6 +149,26 @@ export default function ReviewQueuePage() {
                         <div className="text-secondary small">{formatDate(submission.submittedAt)}</div>
                       </td>
                       <td>{formatMoney(submission.rewardMinor)}</td>
+                      <td>
+                        <div className="fw-semibold">{submission.confidence}%</div>
+                        <div className="text-secondary small">
+                          {submission.confidence >= 88 ? 'High' : submission.confidence >= 75 ? 'Medium' : 'Low'} confidence
+                        </div>
+                      </td>
+                      <td>
+                        <div className="small">{submission.explanation}</div>
+                        {submission.fraudRiskScore !== null && (
+                          <div className="small text-secondary mt-1">Fraud risk: {Math.round(submission.fraudRiskScore * 100)}%</div>
+                        )}
+                        {submission.riskFlag && (
+                          <Badge bg="warning" className="bg-warning-subtle text-warning-emphasis mt-1">
+                            Risk flag
+                          </Badge>
+                        )}
+                        {submission.fraudSignals.length > 0 && (
+                          <div className="text-secondary small mt-1">Signals: {submission.fraudSignals.join(', ')}</div>
+                        )}
+                      </td>
                       <td>
                         <StatusBadge status={submission.status} />
                       </td>

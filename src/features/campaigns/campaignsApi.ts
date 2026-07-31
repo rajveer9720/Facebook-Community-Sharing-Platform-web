@@ -20,8 +20,32 @@ export const campaignsApi = baseApi.injectEndpoints({
       query: (body) => ({ url: '/campaigns', method: 'POST', body }),
       invalidatesTags: [{ type: 'Campaign', id: 'LIST' }],
     }),
+    pauseCampaign: builder.mutation<Campaign, { id: string }>({
+      query: ({ id }) => ({ url: `/campaigns/${id}/pause`, method: 'POST' }),
+      invalidatesTags: (_result, _error, arg) => [{ type: 'Campaign', id: arg.id }, { type: 'Campaign', id: 'LIST' }],
+    }),
+    resumeCampaign: builder.mutation<Campaign, { id: string }>({
+      query: ({ id }) => ({ url: `/campaigns/${id}/resume`, method: 'POST' }),
+      invalidatesTags: (_result, _error, arg) => [{ type: 'Campaign', id: arg.id }, { type: 'Campaign', id: 'LIST' }],
+    }),
+    duplicateCampaign: builder.mutation<Campaign, { id: string }>({
+      query: ({ id }) => ({ url: `/campaigns/${id}/duplicate`, method: 'POST' }),
+      invalidatesTags: (_result, _error, arg) => [{ type: 'Campaign', id: arg.id }, { type: 'Campaign', id: 'LIST' }],
+    }),
+    archiveCampaign: builder.mutation<Campaign, { id: string }>({
+      query: ({ id }) => ({ url: `/campaigns/${id}/archive`, method: 'POST' }),
+      invalidatesTags: (_result, _error, arg) => [{ type: 'Campaign', id: arg.id }, { type: 'Campaign', id: 'LIST' }],
+    }),
   }),
   overrideExisting: false,
 });
 
-export const { useGetCampaignsQuery, useGetCampaignByIdQuery, useCreateCampaignMutation } = campaignsApi;
+export const {
+  useGetCampaignsQuery,
+  useGetCampaignByIdQuery,
+  useCreateCampaignMutation,
+  usePauseCampaignMutation,
+  useResumeCampaignMutation,
+  useDuplicateCampaignMutation,
+  useArchiveCampaignMutation,
+} = campaignsApi;

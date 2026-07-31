@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Alert, Button, Col, Form as BsForm, Modal, Row, Spinner } from 'react-bootstrap';
+import { Alert, Button, Card, Col, Form as BsForm, Modal, Row, Spinner } from 'react-bootstrap';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { CampaignCard } from '@/components/campaigns/CampaignCard';
 import { useGetCampaignsQuery } from '@/features/campaigns/campaignsApi';
 import { useGetGroupsQuery } from '@/features/groups/groupsApi';
-import { useCreateSubmissionMutation } from '@/features/submissions/submissionsApi';
+import { useCreateProofUploadUrlMutation, useCreateSubmissionMutation } from '@/features/submissions/submissionsApi';
 import { formatMoney, daysRemaining } from '@/utils/format';
 import type { Campaign } from '@/types/campaign';
 
@@ -25,9 +25,11 @@ export default function WorkerCampaignsPage() {
   const { data: campaigns, isLoading } = useGetCampaignsQuery({ status: 'ACTIVE' });
   const { data: groups } = useGetGroupsQuery({ status: 'APPROVED' });
   const [createSubmission] = useCreateSubmissionMutation();
+  const [createProofUploadUrl, { isLoading: generatingUploadUrl }] = useCreateProofUploadUrlMutation();
   const [activeCampaign, setActiveCampaign] = useState<Campaign | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [submitError, setSubmitError] = useState('');
+  const [uploadInfo, setUploadInfo] = useState('');
 
   async function handleSubmit(values: SubmissionFormValues, resetForm: () => void) {
     if (!activeCampaign) return;
@@ -42,6 +44,7 @@ export default function WorkerCampaignsPage() {
       setSuccessMessage(`Submission recorded for "${activeCampaign.name}". It is now awaiting verification.`);
       setActiveCampaign(null);
       resetForm();
+      setUploadInfo('');
     } catch (error) {
       const message =
         error && typeof error === 'object' && 'data' in error
@@ -51,11 +54,38 @@ export default function WorkerCampaignsPage() {
     }
   }
 
+  async function handleGenerateUploadUrl(setFieldValue: (field: string, value: string) => void) {
+    setSubmitError('');
+    setUploadInfo('');
+    try {
+      const result = await createProofUploadUrl({
+        fileName: `proof-${Date.now()}.jpg`,
+        contentType: 'image/jpeg',
+      }).unwrap();
+      setFieldValue('proofUrl', result.proofUrl);
+      setUploadInfo('Signed upload URL created. Upload your evidence using this URL, then submit proof.');
+    } catch (error) {
+      const message =
+        error && typeof error === 'object' && 'data' in error
+          ? (error as { data?: { message?: string } }).data?.message
+          : undefined;
+      setSubmitError(message ?? 'Unable to create a signed upload URL.');
+    }
+  }
+
   return (
     <div>
       <p className="text-primary fw-semibold mb-1">Available work</p>
       <h1 className="fs-3 fw-bold">Campaigns</h1>
       <p className="text-secondary">Choose relevant campaigns and follow all Facebook group rules.</p>
+
+      <Card className="border-0 shadow-sm rounded-4 mb-3">
+        <Card.Body className="p-4">
+          <p className="text-primary fw-semibold mb-1">Submission checklist</p>
+          <h2 className="fs-5 fw-semibold mb-2">Make every proof submission review-ready</h2>
+          <p className="text-secondary mb-0">Use an approved group, a valid post URL and a clear description so the review queue can move faster.</p>
+        </Card.Body>
+      </Card>
 
       {successMessage && (
         <Alert variant="success" dismissible onClose={() => setSuccessMessage('')}>
@@ -95,12 +125,17 @@ export default function WorkerCampaignsPage() {
           validationSchema={validationSchema}
           onSubmit={(values, helpers) => handleSubmit(values, helpers.resetForm).finally(() => helpers.setSubmitting(false))}
         >
-          {({ isSubmitting }) => (
+          {({ isSubmitting, setFieldValue }) => (
             <Form noValidate>
               <Modal.Body>
                 {submitError && (
                   <Alert variant="danger" className="py-2 small">
                     {submitError}
+                  </Alert>
+                )}
+                {uploadInfo && (
+                  <Alert variant="info" className="py-2 small">
+                    {uploadInfo}
                   </Alert>
                 )}
                 <BsForm.Group className="mb-3" controlId="groupId">
@@ -118,6 +153,16 @@ export default function WorkerCampaignsPage() {
                 <BsForm.Group className="mb-3" controlId="proofUrl">
                   <BsForm.Label className="fw-semibold small">Post URL</BsForm.Label>
                   <Field name="proofUrl" as={BsForm.Control} placeholder="https://facebook.com/groups/..." />
+                  <Button
+                    type="button"
+                    variant="outline-secondary"
+                    size="sm"
+                    className="mt-2"
+                    disabled={generatingUploadUrl}
+                    onClick={() => handleGenerateUploadUrl(setFieldValue)}
+                  >
+                    {generatingUploadUrl ? 'Generating upload URL…' : 'Generate signed upload URL'}
+                  </Button>
                   <ErrorMessage name="proofUrl" component="div" className="text-danger small mt-1" />
                 </BsForm.Group>
                 <BsForm.Group controlId="caption">

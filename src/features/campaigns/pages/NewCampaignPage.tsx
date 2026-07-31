@@ -5,7 +5,7 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { useCreateCampaignMutation } from '@/features/campaigns/campaignsApi';
 import { ROUTES } from '@/routes/routePaths';
-import type { CampaignCategory, CampaignPriority } from '@/types/campaign';
+import { CAMPAIGN_CATEGORIES, type CampaignCategory, type CampaignPriority } from '@/types/campaign';
 
 interface NewCampaignFormValues {
   name: string;
@@ -19,6 +19,12 @@ interface NewCampaignFormValues {
   maximumPostsPerWorker: string;
   dailyPostingLimit: string;
   instructions: string;
+  screenshotRequired: boolean;
+  facebookPostUrlRequired: boolean;
+  groupNameRequired: boolean;
+  manualReviewRequired: boolean;
+  aiVerificationEnabled: boolean;
+  autoApprovalEnabled: boolean;
 }
 
 const initialValues: NewCampaignFormValues = {
@@ -33,11 +39,17 @@ const initialValues: NewCampaignFormValues = {
   maximumPostsPerWorker: '',
   dailyPostingLimit: '',
   instructions: '',
+  screenshotRequired: true,
+  facebookPostUrlRequired: false,
+  groupNameRequired: false,
+  manualReviewRequired: false,
+  aiVerificationEnabled: true,
+  autoApprovalEnabled: false,
 };
 
 const validationSchema = Yup.object({
   name: Yup.string().required('Campaign name is required'),
-  category: Yup.string().required(),
+  category: Yup.string().oneOf(CAMPAIGN_CATEGORIES).required('Target category is required'),
   priority: Yup.string().required(),
   startDate: Yup.string().required('Start date is required'),
   endDate: Yup.string()
@@ -53,6 +65,12 @@ const validationSchema = Yup.object({
   maximumPostsPerWorker: Yup.number().typeError('Enter a whole number').integer().positive().required('Required'),
   dailyPostingLimit: Yup.number().typeError('Enter a whole number').integer().positive().required('Required'),
   instructions: Yup.string().min(20, 'Provide clearer instructions (min 20 characters)').required('Instructions are required'),
+  screenshotRequired: Yup.boolean(),
+  facebookPostUrlRequired: Yup.boolean(),
+  groupNameRequired: Yup.boolean(),
+  manualReviewRequired: Yup.boolean(),
+  aiVerificationEnabled: Yup.boolean(),
+  autoApprovalEnabled: Yup.boolean(),
 });
 
 export default function NewCampaignPage() {
@@ -75,6 +93,14 @@ export default function NewCampaignPage() {
         maximumPostsPerWorker: Number(values.maximumPostsPerWorker),
         dailyPostingLimit: Number(values.dailyPostingLimit),
         instructions: values.instructions,
+        verificationSettings: {
+          screenshotRequired: values.screenshotRequired,
+          facebookPostUrlRequired: values.facebookPostUrlRequired,
+          groupNameRequired: values.groupNameRequired,
+          manualReviewRequired: values.manualReviewRequired,
+          aiVerificationEnabled: values.aiVerificationEnabled,
+          autoApprovalEnabled: values.autoApprovalEnabled,
+        },
       }).unwrap();
       navigate(ROUTES.admin.campaigns);
     } catch (error) {
@@ -92,8 +118,16 @@ export default function NewCampaignPage() {
         <p className="text-primary fw-semibold mb-1">Campaign builder</p>
         <h1 className="fs-3 fw-bold mb-4">Create campaign</h1>
 
+        <Card className="border-0 shadow-sm rounded-4 mb-4 bg-light">
+          <Card.Body className="p-4">
+            <p className="text-primary fw-semibold mb-1">Campaign checklist</p>
+            <h2 className="fs-5 fw-semibold mb-2">Set the task up for quality delivery</h2>
+            <p className="text-secondary mb-0">Choose clear rules, realistic limits and a fair reward so workers can submit with confidence.</p>
+          </Card.Body>
+        </Card>
+
         <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
-          {({ isSubmitting }) => (
+          {({ isSubmitting, values, setFieldValue }) => (
             <Form noValidate>
               <Row className="g-3">
                 <Col xs={12}>
@@ -105,13 +139,15 @@ export default function NewCampaignPage() {
                 </Col>
                 <Col md={6}>
                   <BsForm.Group controlId="category">
-                    <BsForm.Label className="fw-semibold small">Category</BsForm.Label>
+                    <BsForm.Label className="fw-semibold small">Target category</BsForm.Label>
                     <Field name="category" as={BsForm.Select}>
-                      <option>Technology</option>
-                      <option>Business</option>
-                      <option>Finance</option>
-                      <option>Jobs</option>
+                      {CAMPAIGN_CATEGORIES.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
                     </Field>
+                    <ErrorMessage name="category" component="div" className="text-danger small mt-1" />
                   </BsForm.Group>
                 </Col>
                 <Col md={6}>
@@ -186,6 +222,70 @@ export default function NewCampaignPage() {
                     />
                     <ErrorMessage name="instructions" component="div" className="text-danger small mt-1" />
                   </BsForm.Group>
+                </Col>
+                <Col xs={12}>
+                  <Card className="border-0 bg-light rounded-4">
+                    <Card.Body className="p-4">
+                      <p className="text-primary fw-semibold mb-1">Verification settings</p>
+                      <h3 className="fs-6 fw-semibold mb-3">Choose how evidence is checked</h3>
+                      <Row className="g-3">
+                        <Col md={6}>
+                          <BsForm.Check
+                            type="switch"
+                            id="screenshotRequired"
+                            label="Require screenshot proof"
+                            checked={values.screenshotRequired}
+                            onChange={(event) => setFieldValue('screenshotRequired', event.target.checked)}
+                          />
+                        </Col>
+                        <Col md={6}>
+                          <BsForm.Check
+                            type="switch"
+                            id="facebookPostUrlRequired"
+                            label="Require Facebook post URL"
+                            checked={values.facebookPostUrlRequired}
+                            onChange={(event) => setFieldValue('facebookPostUrlRequired', event.target.checked)}
+                          />
+                        </Col>
+                        <Col md={6}>
+                          <BsForm.Check
+                            type="switch"
+                            id="groupNameRequired"
+                            label="Require group name"
+                            checked={values.groupNameRequired}
+                            onChange={(event) => setFieldValue('groupNameRequired', event.target.checked)}
+                          />
+                        </Col>
+                        <Col md={6}>
+                          <BsForm.Check
+                            type="switch"
+                            id="manualReviewRequired"
+                            label="Force manual review"
+                            checked={values.manualReviewRequired}
+                            onChange={(event) => setFieldValue('manualReviewRequired', event.target.checked)}
+                          />
+                        </Col>
+                        <Col md={6}>
+                          <BsForm.Check
+                            type="switch"
+                            id="aiVerificationEnabled"
+                            label="Enable AI verification"
+                            checked={values.aiVerificationEnabled}
+                            onChange={(event) => setFieldValue('aiVerificationEnabled', event.target.checked)}
+                          />
+                        </Col>
+                        <Col md={6}>
+                          <BsForm.Check
+                            type="switch"
+                            id="autoApprovalEnabled"
+                            label="Enable auto approval"
+                            checked={values.autoApprovalEnabled}
+                            onChange={(event) => setFieldValue('autoApprovalEnabled', event.target.checked)}
+                          />
+                        </Col>
+                      </Row>
+                    </Card.Body>
+                  </Card>
                 </Col>
               </Row>
 

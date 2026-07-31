@@ -14,6 +14,13 @@ export interface Submission {
   proofUrl: string;
   caption: string;
   rewardMinor: MoneyMinor;
+  verificationConfidence: number | null;
+  verificationExplanation: string | null;
+  duplicateProofDetected: boolean;
+  duplicateUrlDetected: boolean;
+  fraudRiskScore: number | null;
+  flaggedForFraud: boolean;
+  fraudSignals: string[];
   submittedAt: string;
   reviewedAt: string | null;
   reviewNote: string | null;
@@ -24,6 +31,17 @@ export interface CreateSubmissionRequest {
   groupId: string;
   proofUrl: string;
   caption: string;
+}
+
+export interface CreateProofUploadUrlRequest {
+  fileName: string;
+  contentType: string;
+}
+
+export interface CreateProofUploadUrlResponse {
+  uploadUrl: string;
+  proofUrl: string;
+  expiresAt?: string;
 }
 
 export type ReviewDecision = 'APPROVE' | 'REJECT' | 'REQUEST_RESUBMISSION';

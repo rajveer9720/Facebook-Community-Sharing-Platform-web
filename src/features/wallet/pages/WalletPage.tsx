@@ -79,6 +79,19 @@ export default function WalletPage() {
 
       <Card className="border-0 shadow-sm rounded-4 mt-4">
         <Card.Body className="p-4">
+          <div className="d-flex justify-content-between align-items-start gap-3">
+            <div>
+              <p className="text-primary fw-semibold mb-1">Payout guidance</p>
+              <h2 className="fs-5 fw-semibold mb-2">Keep your flow moving</h2>
+              <p className="text-secondary mb-0">Approved withdrawals are usually processed within 1-3 business days once the request is reviewed.</p>
+            </div>
+            <span className="badge rounded-pill bg-primary-subtle text-primary-emphasis">Fast track enabled</span>
+          </div>
+        </Card.Body>
+      </Card>
+
+      <Card className="border-0 shadow-sm rounded-4 mt-4">
+        <Card.Body className="p-4">
           <h2 className="fs-5 fw-semibold mb-3">Request withdrawal</h2>
           <Formik
             initialValues={initialValues}

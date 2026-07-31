@@ -1,8 +1,19 @@
 import type { MoneyMinor } from './common';
 
-export type CampaignCategory = 'Technology' | 'Business' | 'Finance' | 'Jobs';
+export const CAMPAIGN_CATEGORIES = [
+  'Crypto',
+  'Business',
+  'Investment',
+  'Trading',
+  'Finance',
+  'Technology',
+  'Jobs',
+  'MLM',
+] as const;
+
+export type CampaignCategory = (typeof CAMPAIGN_CATEGORIES)[number];
 export type CampaignPriority = 'Normal' | 'High' | 'Urgent';
-export type CampaignStatus = 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'COMPLETED';
+export type CampaignStatus = 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'ARCHIVED';
 
 export interface Campaign {
   id: string;
@@ -11,15 +22,27 @@ export interface Campaign {
   priority: CampaignPriority;
   status: CampaignStatus;
   instructions: string;
+  verificationSettings: {
+    screenshotRequired: boolean;
+    facebookPostUrlRequired: boolean;
+    groupNameRequired: boolean;
+    manualReviewRequired: boolean;
+    aiVerificationEnabled: boolean;
+    autoApprovalEnabled: boolean;
+  };
   startDate: string;
   endDate: string;
   budgetMinor: MoneyMinor;
+  spentMinor: MoneyMinor;
+  remainingBudgetMinor: MoneyMinor;
   rewardPerPostMinor: MoneyMinor;
   currency: string;
   maximumWorkers: number;
   maximumPostsPerWorker: number;
   dailyPostingLimit: number;
   workersJoined: number;
+  endingSoonNotifiedAt: string | null;
+  archivedAt: string | null;
   createdAt: string;
 }
 
@@ -35,6 +58,14 @@ export interface CreateCampaignRequest {
   maximumPostsPerWorker: number;
   dailyPostingLimit: number;
   instructions: string;
+  verificationSettings: {
+    screenshotRequired: boolean;
+    facebookPostUrlRequired: boolean;
+    groupNameRequired: boolean;
+    manualReviewRequired: boolean;
+    aiVerificationEnabled: boolean;
+    autoApprovalEnabled: boolean;
+  };
 }
 
 export interface CampaignAssignment {

@@ -1,15 +1,44 @@
-import { Badge, Card, ListGroup, Spinner, Table } from 'react-bootstrap';
+import { useState } from 'react';
+import { Badge, ButtonGroup, Card, ListGroup, Spinner, Table, ToggleButton } from 'react-bootstrap';
 import { useGetAchievementsQuery, useGetLeaderboardQuery } from '@/features/leaderboard/leaderboardApi';
 import { formatMoney, formatDate } from '@/utils/format';
+import type { LeaderboardPeriod } from '@/types/leaderboard';
+
+const periodOptions: Array<{ value: LeaderboardPeriod; label: string }> = [
+  { value: 'DAILY', label: 'Daily' },
+  { value: 'WEEKLY', label: 'Weekly' },
+  { value: 'MONTHLY', label: 'Monthly' },
+  { value: 'ALL_TIME', label: 'All-time' },
+];
 
 export default function LeaderboardPage() {
-  const { data: leaderboard, isLoading: leaderboardLoading } = useGetLeaderboardQuery();
+  const [period, setPeriod] = useState<LeaderboardPeriod>('WEEKLY');
+  const { data: leaderboard, isLoading: leaderboardLoading } = useGetLeaderboardQuery({ period });
   const { data: achievements, isLoading: achievementsLoading } = useGetAchievementsQuery();
 
   return (
     <div className="mx-auto" style={{ maxWidth: 720 }}>
       <h1 className="fs-3 fw-bold">Leaderboard</h1>
       <p className="text-secondary">Rankings based on approved posts and total earnings.</p>
+
+      <div className="mt-3">
+        <ButtonGroup aria-label="Leaderboard period">
+          {periodOptions.map((option) => (
+            <ToggleButton
+              key={option.value}
+              id={`period-${option.value}`}
+              type="radio"
+              name="leaderboard-period"
+              value={option.value}
+              variant={period === option.value ? 'dark' : 'outline-secondary'}
+              checked={period === option.value}
+              onChange={() => setPeriod(option.value)}
+            >
+              {option.label}
+            </ToggleButton>
+          ))}
+        </ButtonGroup>
+      </div>
 
       <Card className="border-0 shadow-sm rounded-4 mt-3">
         <Card.Body className="p-0">
