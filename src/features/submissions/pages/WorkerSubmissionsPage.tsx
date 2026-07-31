@@ -11,6 +11,11 @@ function toPercent(value: number | null): string {
   return `${normalized}%`;
 }
 
+function riskPercent(value: number | null): string {
+  if (value === null) return '0%';
+  return `${value <= 1 ? Math.round(value * 100) : Math.round(value)}%`;
+}
+
 export default function WorkerSubmissionsPage() {
   const user = useAppSelector((state) => state.auth.user);
   const { data: submissions, isLoading } = useGetSubmissionsQuery(user ? { workerId: user.id } : undefined);
@@ -99,7 +104,7 @@ export default function WorkerSubmissionsPage() {
                       <td>{toPercent(submission.verificationConfidence)}</td>
                       <td>
                         {submission.flaggedForFraud ? (
-                          <span className="text-danger fw-semibold">Flagged ({Math.round((submission.fraudRiskScore ?? 0) * 100)}%)</span>
+                          <span className="text-danger fw-semibold">Flagged ({riskPercent(submission.fraudRiskScore)})</span>
                         ) : (
                           <span className="text-success">Clear</span>
                         )}

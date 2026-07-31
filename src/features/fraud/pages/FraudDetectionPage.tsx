@@ -4,17 +4,31 @@ import { useGetSubmissionsQuery } from '@/features/submissions/submissionsApi';
 import { useGetGroupCoverageQuery } from '@/features/groups/groupsApi';
 import { formatDate } from '@/utils/format';
 
+function normalizeRiskScore(value: number | null): number {
+  if (value === null) return 0;
+  return value <= 1 ? value * 100 : value;
+}
+
+function formatFraudSignals(signals: Record<string, unknown>): string {
+  const entries = Object.entries(signals);
+  if (entries.length === 0) {
+    return '';
+  }
+
+  return entries.map(([key, value]) => `${key}=${String(value)}`).join(', ');
+}
+
 export default function FraudDetectionPage() {
   const { data: submissions, isLoading: submissionsLoading } = useGetSubmissionsQuery();
   const { data: coverage, isLoading: coverageLoading } = useGetGroupCoverageQuery();
 
   const suspicious = (submissions ?? [])
-    .filter((entry) => entry.flaggedForFraud || (entry.fraudRiskScore ?? 0) >= 0.65 || entry.duplicateProofDetected || entry.duplicateUrlDetected)
-    .sort((a, b) => (b.fraudRiskScore ?? 0) - (a.fraudRiskScore ?? 0))
+    .filter((entry) => entry.flaggedForFraud || normalizeRiskScore(entry.fraudRiskScore) >= 65 || entry.duplicateProofDetected || entry.duplicateUrlDetected)
+    .sort((a, b) => normalizeRiskScore(b.fraudRiskScore) - normalizeRiskScore(a.fraudRiskScore))
     .slice(0, 8);
 
-  const highRiskCount = suspicious.filter((entry) => (entry.fraudRiskScore ?? 0) >= 0.85).length;
-  const mediumRiskCount = suspicious.filter((entry) => (entry.fraudRiskScore ?? 0) >= 0.65 && (entry.fraudRiskScore ?? 0) < 0.85).length;
+  const highRiskCount = suspicious.filter((entry) => normalizeRiskScore(entry.fraudRiskScore) >= 85).length;
+  const mediumRiskCount = suspicious.filter((entry) => normalizeRiskScore(entry.fraudRiskScore) >= 65 && normalizeRiskScore(entry.fraudRiskScore) < 85).length;
 
   return (
     <div>
@@ -102,15 +116,17 @@ export default function FraudDetectionPage() {
                       <td>{row.campaignName}</td>
                       <td>{row.groupName}</td>
                       <td>{formatDate(row.submittedAt)}</td>
-                      <td>{Math.round((row.fraudRiskScore ?? 0) * 100)}</td>
+                      <td>{Math.round(normalizeRiskScore(row.fraudRiskScore))}</td>
                       <td className="pe-4">
                         <Badge
-                          bg={(row.fraudRiskScore ?? 0) >= 0.85 ? 'danger' : 'warning'}
-                          className={(row.fraudRiskScore ?? 0) >= 0.85 ? 'bg-danger-subtle text-danger-emphasis' : 'bg-warning-subtle text-warning-emphasis'}
+                          bg={normalizeRiskScore(row.fraudRiskScore) >= 85 ? 'danger' : 'warning'}
+                          className={normalizeRiskScore(row.fraudRiskScore) >= 85 ? 'bg-danger-subtle text-danger-emphasis' : 'bg-warning-subtle text-warning-emphasis'}
                         >
-                          {(row.fraudRiskScore ?? 0) >= 0.85 ? 'High' : 'Medium'}
+                          {normalizeRiskScore(row.fraudRiskScore) >= 85 ? 'High' : 'Medium'}
                         </Badge>
-                        {row.fraudSignals.length > 0 && <div className="small text-secondary mt-1">{row.fraudSignals.join(', ')}</div>}
+                        {Object.keys(row.fraudSignals).length > 0 && (
+                          <div className="small text-secondary mt-1">{formatFraudSignals(row.fraudSignals)}</div>
+                        )}
                       </td>
                     </tr>
                   ))}

@@ -22,6 +22,11 @@ export interface Campaign {
   priority: CampaignPriority;
   status: CampaignStatus;
   instructions: string;
+  mediaVariants: {
+    mediaUrl: string;
+    mediaType: 'IMAGE' | 'VIDEO';
+    caption: string;
+  }[];
   verificationSettings: {
     screenshotRequired: boolean;
     facebookPostUrlRequired: boolean;
@@ -58,14 +63,17 @@ export interface CreateCampaignRequest {
   maximumPostsPerWorker: number;
   dailyPostingLimit: number;
   instructions: string;
-  verificationSettings: {
-    screenshotRequired: boolean;
-    facebookPostUrlRequired: boolean;
-    groupNameRequired: boolean;
-    manualReviewRequired: boolean;
-    aiVerificationEnabled: boolean;
-    autoApprovalEnabled: boolean;
-  };
+  mediaVariants: {
+    mediaUrl: string;
+    mediaType: 'IMAGE' | 'VIDEO';
+    caption: string;
+  }[];
+  screenshotRequired: boolean;
+  facebookPostUrlRequired: boolean;
+  groupNameRequired: boolean;
+  manualReviewRequired: boolean;
+  aiVerificationEnabled: boolean;
+  autoApprovalEnabled: boolean;
 }
 
 export interface CampaignAssignment {

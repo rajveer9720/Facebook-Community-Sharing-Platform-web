@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Button, Card, Col, Form as BsForm, Row } from 'react-bootstrap';
+import { Alert, Button, Card, Col, Form as BsForm, Row, Stack } from 'react-bootstrap';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { useCreateCampaignMutation } from '@/features/campaigns/campaignsApi';
@@ -19,6 +19,7 @@ interface NewCampaignFormValues {
   maximumPostsPerWorker: string;
   dailyPostingLimit: string;
   instructions: string;
+  mediaVariants: { mediaUrl: string; mediaType: 'IMAGE' | 'VIDEO'; caption: string }[];
   screenshotRequired: boolean;
   facebookPostUrlRequired: boolean;
   groupNameRequired: boolean;
@@ -39,6 +40,7 @@ const initialValues: NewCampaignFormValues = {
   maximumPostsPerWorker: '',
   dailyPostingLimit: '',
   instructions: '',
+  mediaVariants: [{ mediaUrl: '', mediaType: 'IMAGE', caption: '' }],
   screenshotRequired: true,
   facebookPostUrlRequired: false,
   groupNameRequired: false,
@@ -65,6 +67,13 @@ const validationSchema = Yup.object({
   maximumPostsPerWorker: Yup.number().typeError('Enter a whole number').integer().positive().required('Required'),
   dailyPostingLimit: Yup.number().typeError('Enter a whole number').integer().positive().required('Required'),
   instructions: Yup.string().min(20, 'Provide clearer instructions (min 20 characters)').required('Instructions are required'),
+  mediaVariants: Yup.array().of(
+    Yup.object({
+      mediaUrl: Yup.string().url('Enter a valid media URL').required('Media URL is required'),
+      mediaType: Yup.mixed<'IMAGE' | 'VIDEO'>().oneOf(['IMAGE', 'VIDEO']).required('Media type is required'),
+      caption: Yup.string().min(1, 'Caption is required').required('Caption is required'),
+    }),
+  ).min(1, 'Add at least one media variant').required('Add at least one media variant'),
   screenshotRequired: Yup.boolean(),
   facebookPostUrlRequired: Yup.boolean(),
   groupNameRequired: Yup.boolean(),
@@ -93,14 +102,13 @@ export default function NewCampaignPage() {
         maximumPostsPerWorker: Number(values.maximumPostsPerWorker),
         dailyPostingLimit: Number(values.dailyPostingLimit),
         instructions: values.instructions,
-        verificationSettings: {
-          screenshotRequired: values.screenshotRequired,
-          facebookPostUrlRequired: values.facebookPostUrlRequired,
-          groupNameRequired: values.groupNameRequired,
-          manualReviewRequired: values.manualReviewRequired,
-          aiVerificationEnabled: values.aiVerificationEnabled,
-          autoApprovalEnabled: values.autoApprovalEnabled,
-        },
+        mediaVariants: values.mediaVariants.filter((variant) => variant.mediaUrl.trim() && variant.caption.trim()),
+        screenshotRequired: values.screenshotRequired,
+        facebookPostUrlRequired: values.facebookPostUrlRequired,
+        groupNameRequired: values.groupNameRequired,
+        manualReviewRequired: values.manualReviewRequired,
+        aiVerificationEnabled: values.aiVerificationEnabled,
+        autoApprovalEnabled: values.autoApprovalEnabled,
       }).unwrap();
       navigate(ROUTES.admin.campaigns);
     } catch (error) {
@@ -222,6 +230,74 @@ export default function NewCampaignPage() {
                     />
                     <ErrorMessage name="instructions" component="div" className="text-danger small mt-1" />
                   </BsForm.Group>
+                </Col>
+                <Col xs={12}>
+                  <Card className="border-0 bg-light rounded-4">
+                    <Card.Body className="p-4">
+                      <div className="d-flex align-items-center justify-content-between gap-3 mb-3">
+                        <div>
+                          <p className="text-primary fw-semibold mb-1">Content pool</p>
+                          <h3 className="fs-6 fw-semibold mb-0">Add multiple media and captions</h3>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline-primary"
+                          size="sm"
+                          onClick={() => setFieldValue('mediaVariants', [...values.mediaVariants, { mediaUrl: '', mediaType: 'IMAGE', caption: '' }])}
+                        >
+                          Add variant
+                        </Button>
+                      </div>
+                      <Stack gap={3}>
+                        {values.mediaVariants.map((_, index) => (
+                          <div key={index} className="border rounded-4 p-3 bg-white">
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                              <p className="fw-semibold mb-0">Variant {index + 1}</p>
+                              {values.mediaVariants.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="outline-danger"
+                                  size="sm"
+                                  onClick={() =>
+                                    setFieldValue(
+                                      'mediaVariants',
+                                      values.mediaVariants.filter((_, currentIndex) => currentIndex !== index),
+                                    )
+                                  }
+                                >
+                                  Remove
+                                </Button>
+                              )}
+                            </div>
+                            <Row className="g-3">
+                              <Col md={5}>
+                                <BsForm.Group controlId={`mediaVariants.${index}.mediaUrl`}>
+                                  <BsForm.Label className="small fw-semibold">Media URL</BsForm.Label>
+                                  <Field name={`mediaVariants.${index}.mediaUrl`} as={BsForm.Control} placeholder="https://..." />
+                                </BsForm.Group>
+                              </Col>
+                              <Col md={3}>
+                                <BsForm.Group controlId={`mediaVariants.${index}.mediaType`}>
+                                  <BsForm.Label className="small fw-semibold">Type</BsForm.Label>
+                                  <Field name={`mediaVariants.${index}.mediaType`} as={BsForm.Select}>
+                                    <option value="IMAGE">Image</option>
+                                    <option value="VIDEO">Video</option>
+                                  </Field>
+                                </BsForm.Group>
+                              </Col>
+                              <Col md={4}>
+                                <BsForm.Group controlId={`mediaVariants.${index}.caption`}>
+                                  <BsForm.Label className="small fw-semibold">Caption</BsForm.Label>
+                                  <Field name={`mediaVariants.${index}.caption`} as={BsForm.Control} placeholder="Caption for this variant" />
+                                </BsForm.Group>
+                              </Col>
+                            </Row>
+                          </div>
+                        ))}
+                      </Stack>
+                      <p className="text-secondary small mb-0 mt-3">Workers will receive one random variant from this pool.</p>
+                    </Card.Body>
+                  </Card>
                 </Col>
                 <Col xs={12}>
                   <Card className="border-0 bg-light rounded-4">

@@ -12,14 +12,24 @@ import type { Campaign } from '@/types/campaign';
 interface SubmissionFormValues {
   groupId: string;
   proofUrl: string;
+  facebookPostUrl: string;
+  groupName: string;
   caption: string;
 }
 
-const validationSchema = Yup.object({
-  groupId: Yup.string().required('Choose the group you posted in'),
-  proofUrl: Yup.string().url('Enter a valid post URL').required('Proof URL is required'),
-  caption: Yup.string().min(10, 'Add a short description of the post').required('Caption is required'),
-});
+function buildValidationSchema(campaign: Campaign | null) {
+  return Yup.object({
+    groupId: Yup.string().required('Choose the group you posted in'),
+    proofUrl: Yup.string().url('Enter a valid screenshot URL').required('Screenshot proof URL is required'),
+    facebookPostUrl: campaign?.verificationSettings.facebookPostUrlRequired
+      ? Yup.string().url('Enter a valid Facebook post URL').required('Facebook post URL is required')
+      : Yup.string().url('Enter a valid Facebook post URL').optional(),
+    groupName: campaign?.verificationSettings.groupNameRequired
+      ? Yup.string().trim().required('Group name is required')
+      : Yup.string().trim().optional(),
+    caption: Yup.string().min(10, 'Add a short description of the post').required('Caption is required'),
+  });
+}
 
 export default function WorkerCampaignsPage() {
   const { data: campaigns, isLoading } = useGetCampaignsQuery({ status: 'ACTIVE' });
@@ -39,6 +49,8 @@ export default function WorkerCampaignsPage() {
         campaignId: activeCampaign.id,
         groupId: values.groupId,
         proofUrl: values.proofUrl,
+        facebookPostUrl: values.facebookPostUrl.trim() || undefined,
+        groupName: values.groupName.trim() || undefined,
         caption: values.caption,
       }).unwrap();
       setSuccessMessage(`Submission recorded for "${activeCampaign.name}". It is now awaiting verification.`);
@@ -61,9 +73,10 @@ export default function WorkerCampaignsPage() {
       const result = await createProofUploadUrl({
         fileName: `proof-${Date.now()}.jpg`,
         contentType: 'image/jpeg',
+        campaignId: activeCampaign?.id,
       }).unwrap();
-      setFieldValue('proofUrl', result.proofUrl);
-      setUploadInfo('Signed upload URL created. Upload your evidence using this URL, then submit proof.');
+      setFieldValue('proofUrl', result.publicUrl);
+      setUploadInfo('Signed upload URL created. Upload the screenshot with uploadUrl, then keep publicUrl as proof URL.');
     } catch (error) {
       const message =
         error && typeof error === 'object' && 'data' in error
@@ -83,7 +96,7 @@ export default function WorkerCampaignsPage() {
         <Card.Body className="p-4">
           <p className="text-primary fw-semibold mb-1">Submission checklist</p>
           <h2 className="fs-5 fw-semibold mb-2">Make every proof submission review-ready</h2>
-          <p className="text-secondary mb-0">Use an approved group, a valid post URL and a clear description so the review queue can move faster.</p>
+          <p className="text-secondary mb-0">Use an approved group, upload screenshot proof, add caption, and include Facebook URL/group name when required.</p>
         </Card.Body>
       </Card>
 
@@ -120,9 +133,20 @@ export default function WorkerCampaignsPage() {
         <Modal.Header closeButton>
           <Modal.Title className="fs-5">Submit proof &mdash; {activeCampaign?.name}</Modal.Title>
         </Modal.Header>
+        {activeCampaign && activeCampaign.mediaVariants.length > 0 && (
+          <div className="px-3 pt-3">
+            <Card className="border-0 bg-light rounded-4 mb-0">
+              <Card.Body className="p-3">
+                <p className="text-primary fw-semibold mb-1">Assigned content pool</p>
+                <p className="fw-semibold mb-2">Use the media/caption combo you receive from the system</p>
+                <div className="small text-secondary mb-2">Random variant assignment happens on the backend for each submission.</div>
+              </Card.Body>
+            </Card>
+          </div>
+        )}
         <Formik<SubmissionFormValues>
-          initialValues={{ groupId: '', proofUrl: '', caption: '' }}
-          validationSchema={validationSchema}
+          initialValues={{ groupId: '', proofUrl: '', facebookPostUrl: '', groupName: '', caption: '' }}
+          validationSchema={buildValidationSchema(activeCampaign)}
           onSubmit={(values, helpers) => handleSubmit(values, helpers.resetForm).finally(() => helpers.setSubmitting(false))}
         >
           {({ isSubmitting, setFieldValue }) => (
@@ -151,8 +175,8 @@ export default function WorkerCampaignsPage() {
                   <ErrorMessage name="groupId" component="div" className="text-danger small mt-1" />
                 </BsForm.Group>
                 <BsForm.Group className="mb-3" controlId="proofUrl">
-                  <BsForm.Label className="fw-semibold small">Post URL</BsForm.Label>
-                  <Field name="proofUrl" as={BsForm.Control} placeholder="https://facebook.com/groups/..." />
+                  <BsForm.Label className="fw-semibold small">Screenshot proof URL</BsForm.Label>
+                  <Field name="proofUrl" as={BsForm.Control} placeholder="https://storage.googleapis.com/..." />
                   <Button
                     type="button"
                     variant="outline-secondary"
@@ -164,6 +188,22 @@ export default function WorkerCampaignsPage() {
                     {generatingUploadUrl ? 'Generating upload URL…' : 'Generate signed upload URL'}
                   </Button>
                   <ErrorMessage name="proofUrl" component="div" className="text-danger small mt-1" />
+                </BsForm.Group>
+                <BsForm.Group className="mb-3" controlId="facebookPostUrl">
+                  <BsForm.Label className="fw-semibold small">
+                    Facebook post URL
+                    {activeCampaign?.verificationSettings.facebookPostUrlRequired ? ' *' : ''}
+                  </BsForm.Label>
+                  <Field name="facebookPostUrl" as={BsForm.Control} placeholder="https://facebook.com/groups/..." />
+                  <ErrorMessage name="facebookPostUrl" component="div" className="text-danger small mt-1" />
+                </BsForm.Group>
+                <BsForm.Group className="mb-3" controlId="groupName">
+                  <BsForm.Label className="fw-semibold small">
+                    Group name
+                    {activeCampaign?.verificationSettings.groupNameRequired ? ' *' : ''}
+                  </BsForm.Label>
+                  <Field name="groupName" as={BsForm.Control} placeholder="Exact Facebook group name used in post" />
+                  <ErrorMessage name="groupName" component="div" className="text-danger small mt-1" />
                 </BsForm.Group>
                 <BsForm.Group controlId="caption">
                   <BsForm.Label className="fw-semibold small">Posted caption</BsForm.Label>

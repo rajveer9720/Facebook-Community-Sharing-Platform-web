@@ -17,6 +17,22 @@ function toPercent(value: number | null): number {
   return value <= 1 ? Math.round(value * 100) : Math.round(value);
 }
 
+function formatRiskPercent(value: number | null): string {
+  if (value === null) return '0%';
+  return `${value <= 1 ? Math.round(value * 100) : Math.round(value)}%`;
+}
+
+function formatFraudSignals(signals: Record<string, unknown>): string {
+  const entries = Object.entries(signals);
+  if (entries.length === 0) {
+    return '';
+  }
+
+  return entries
+    .map(([key, value]) => `${key}=${String(value)}`)
+    .join(', ');
+}
+
 export default function ReviewQueuePage() {
   const { data: submissions, isLoading } = useGetSubmissionsQuery();
   const [reviewSubmission, { isLoading: isReviewing }] = useReviewSubmissionMutation();
@@ -143,9 +159,13 @@ export default function ReviewQueuePage() {
                       <td>{submission.campaignName}</td>
                       <td>{submission.groupName}</td>
                       <td>
-                        <a href={submission.proofUrl} target="_blank" rel="noreferrer">
-                          View post
-                        </a>
+                        {submission.proofUrl ? (
+                          <a href={submission.proofUrl} target="_blank" rel="noreferrer">
+                            View proof
+                          </a>
+                        ) : (
+                          <span className="text-secondary">No proof URL</span>
+                        )}
                         <div className="text-secondary small">{formatDate(submission.submittedAt)}</div>
                       </td>
                       <td>{formatMoney(submission.rewardMinor)}</td>
@@ -158,15 +178,15 @@ export default function ReviewQueuePage() {
                       <td>
                         <div className="small">{submission.explanation}</div>
                         {submission.fraudRiskScore !== null && (
-                          <div className="small text-secondary mt-1">Fraud risk: {Math.round(submission.fraudRiskScore * 100)}%</div>
+                          <div className="small text-secondary mt-1">Fraud risk: {formatRiskPercent(submission.fraudRiskScore)}</div>
                         )}
                         {submission.riskFlag && (
                           <Badge bg="warning" className="bg-warning-subtle text-warning-emphasis mt-1">
                             Risk flag
                           </Badge>
                         )}
-                        {submission.fraudSignals.length > 0 && (
-                          <div className="text-secondary small mt-1">Signals: {submission.fraudSignals.join(', ')}</div>
+                        {Object.keys(submission.fraudSignals).length > 0 && (
+                          <div className="text-secondary small mt-1">Signals: {formatFraudSignals(submission.fraudSignals)}</div>
                         )}
                       </td>
                       <td>
