@@ -76,6 +76,11 @@ export interface CreateCampaignRequest {
   autoApprovalEnabled: boolean;
 }
 
+export interface CampaignMediaUploadResponse {
+  mediaUrl: string;
+  objectKey: string;
+}
+
 export interface CampaignAssignment {
   id: string;
   campaignId: string;

@@ -8,11 +8,19 @@ interface CampaignCardProps {
   period: string;
   workers: string;
   status?: string;
+  thumbnailUrl?: string;
+  thumbnailType?: 'IMAGE' | 'VIDEO';
 }
 
-export function CampaignCard({ name, category, reward, period, workers, status = 'Active' }: CampaignCardProps) {
+export function CampaignCard({ name, category, reward, period, workers, status = 'Active', thumbnailUrl, thumbnailType }: CampaignCardProps) {
   return (
-    <Card className="border-0 shadow-sm rounded-4">
+    <Card className="border-0 shadow-sm rounded-4 overflow-hidden">
+      {thumbnailUrl &&
+        (thumbnailType === 'VIDEO' ? (
+          <video src={thumbnailUrl} className="w-100" style={{ height: 140, objectFit: 'cover' }} muted />
+        ) : (
+          <Card.Img src={thumbnailUrl} style={{ height: 140, objectFit: 'cover' }} />
+        ))}
       <Card.Body className="p-4">
         <div className="d-flex align-items-start justify-content-between gap-3">
           <div>

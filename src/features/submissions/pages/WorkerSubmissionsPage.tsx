@@ -95,7 +95,9 @@ export default function WorkerSubmissionsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {submissions.map((submission) => (
+                  {submissions.map((submission) => {
+                    const aiUnavailable = submission.verificationExplanation?.includes('AI checks unavailable') ?? false;
+                    return (
                     <tr key={submission.id}>
                       <td className="ps-4 fw-semibold">{submission.campaignName}</td>
                       <td>{submission.groupName}</td>
@@ -112,9 +114,13 @@ export default function WorkerSubmissionsPage() {
                       <td>
                         <StatusBadge status={submission.status} />
                       </td>
-                      <td className="pe-4 text-secondary small">{submission.reviewNote ?? '—'}</td>
+                      <td className="pe-4 small">
+                        {aiUnavailable && <div className="text-warning fw-semibold">AI verification issue — sent to manual review</div>}
+                        <span className="text-secondary">{submission.reviewNote ?? '—'}</span>
+                      </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </Table>
             </div>

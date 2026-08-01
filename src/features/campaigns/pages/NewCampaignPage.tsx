@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Button, Card, Col, Form as BsForm, Row, Stack } from 'react-bootstrap';
+import { Alert, Button, Card, Col, Form as BsForm, Row, Spinner, Stack } from 'react-bootstrap';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { useCreateCampaignMutation } from '@/features/campaigns/campaignsApi';
+import { useCreateCampaignMutation, useUploadCampaignMediaMutation } from '@/features/campaigns/campaignsApi';
 import { ROUTES } from '@/routes/routePaths';
 import { CAMPAIGN_CATEGORIES, type CampaignCategory, type CampaignPriority } from '@/types/campaign';
 
@@ -85,7 +85,33 @@ const validationSchema = Yup.object({
 export default function NewCampaignPage() {
   const navigate = useNavigate();
   const [createCampaign] = useCreateCampaignMutation();
+  const [uploadCampaignMedia] = useUploadCampaignMediaMutation();
   const [formError, setFormError] = useState('');
+  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
+  const [uploadErrors, setUploadErrors] = useState<Record<number, string>>({});
+
+  async function handleFileSelect(
+    index: number,
+    file: File | undefined,
+    setFieldValue: (field: string, value: unknown) => void,
+  ) {
+    if (!file) return;
+    setUploadingIndex(index);
+    setUploadErrors((previous) => ({ ...previous, [index]: '' }));
+    try {
+      const result = await uploadCampaignMedia(file).unwrap();
+      setFieldValue(`mediaVariants.${index}.mediaUrl`, result.mediaUrl);
+      setFieldValue(`mediaVariants.${index}.mediaType`, file.type.startsWith('video/') ? 'VIDEO' : 'IMAGE');
+    } catch (error) {
+      const message =
+        error && typeof error === 'object' && 'data' in error
+          ? (error as { data?: { message?: string } }).data?.message
+          : undefined;
+      setUploadErrors((previous) => ({ ...previous, [index]: message ?? 'Upload failed. Please try again.' }));
+    } finally {
+      setUploadingIndex(null);
+    }
+  }
 
   async function handleSubmit(values: NewCampaignFormValues) {
     setFormError('');
@@ -271,9 +297,39 @@ export default function NewCampaignPage() {
                             </div>
                             <Row className="g-3">
                               <Col md={5}>
-                                <BsForm.Group controlId={`mediaVariants.${index}.mediaUrl`}>
-                                  <BsForm.Label className="small fw-semibold">Media URL</BsForm.Label>
-                                  <Field name={`mediaVariants.${index}.mediaUrl`} as={BsForm.Control} placeholder="https://..." />
+                                <BsForm.Group controlId={`mediaVariants.${index}.file`}>
+                                  <BsForm.Label className="small fw-semibold">Upload image or video</BsForm.Label>
+                                  <BsForm.Control
+                                    type="file"
+                                    accept="image/*,video/*"
+                                    disabled={uploadingIndex === index}
+                                    onChange={(event) => {
+                                      const input = event.target as HTMLInputElement;
+                                      void handleFileSelect(index, input.files?.[0], setFieldValue);
+                                      input.value = '';
+                                    }}
+                                  />
+                                  {uploadingIndex === index && (
+                                    <div className="d-flex align-items-center gap-2 text-secondary small mt-1">
+                                      <Spinner animation="border" size="sm" /> Uploading…
+                                    </div>
+                                  )}
+                                  {uploadErrors[index] && <div className="text-danger small mt-1">{uploadErrors[index]}</div>}
+                                  {values.mediaVariants[index].mediaUrl && (
+                                    <div className="mt-2">
+                                      {values.mediaVariants[index].mediaType === 'VIDEO' ? (
+                                        <video src={values.mediaVariants[index].mediaUrl} controls className="rounded-3 border" style={{ maxHeight: 120 }} />
+                                      ) : (
+                                        <img
+                                          src={values.mediaVariants[index].mediaUrl}
+                                          alt={`Variant ${index + 1} preview`}
+                                          className="rounded-3 border"
+                                          style={{ maxHeight: 120, maxWidth: '100%', objectFit: 'cover' }}
+                                        />
+                                      )}
+                                    </div>
+                                  )}
+                                  <ErrorMessage name={`mediaVariants.${index}.mediaUrl`} component="div" className="text-danger small mt-1" />
                                 </BsForm.Group>
                               </Col>
                               <Col md={3}>

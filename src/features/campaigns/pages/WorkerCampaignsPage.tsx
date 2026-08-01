@@ -35,17 +35,28 @@ export default function WorkerCampaignsPage() {
   const { data: campaigns, isLoading } = useGetCampaignsQuery({ status: 'ACTIVE' });
   const { data: groups } = useGetGroupsQuery({ status: 'APPROVED' });
   const [createSubmission] = useCreateSubmissionMutation();
-  const [createProofUploadUrl, { isLoading: generatingUploadUrl }] = useCreateProofUploadUrlMutation();
+  const [createProofUploadUrl] = useCreateProofUploadUrlMutation();
   const [activeCampaign, setActiveCampaign] = useState<Campaign | null>(null);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [submissionResult, setSubmissionResult] = useState<{
+    variant: 'success' | 'warning';
+    message: string;
+    detail: string | null;
+  } | null>(null);
   const [submitError, setSubmitError] = useState('');
-  const [uploadInfo, setUploadInfo] = useState('');
+  const [uploadingProof, setUploadingProof] = useState(false);
+  const [copiedVariantIndex, setCopiedVariantIndex] = useState<number | null>(null);
+
+  async function handleCopyCaption(index: number, caption: string) {
+    await navigator.clipboard.writeText(caption);
+    setCopiedVariantIndex(index);
+    window.setTimeout(() => setCopiedVariantIndex((current) => (current === index ? null : current)), 2000);
+  }
 
   async function handleSubmit(values: SubmissionFormValues, resetForm: () => void) {
     if (!activeCampaign) return;
     setSubmitError('');
     try {
-      await createSubmission({
+      const submission = await createSubmission({
         campaignId: activeCampaign.id,
         groupId: values.groupId,
         proofUrl: values.proofUrl,
@@ -53,10 +64,29 @@ export default function WorkerCampaignsPage() {
         groupName: values.groupName.trim() || undefined,
         caption: values.caption,
       }).unwrap();
-      setSuccessMessage(`Submission recorded for "${activeCampaign.name}". It is now awaiting verification.`);
+
+      const aiUnavailable = submission.verificationExplanation?.includes('AI checks unavailable') ?? false;
+      if (submission.status === 'APPROVED') {
+        setSubmissionResult({
+          variant: 'success',
+          message: `Submission for "${activeCampaign.name}" was auto-approved.`,
+          detail: submission.reviewNote,
+        });
+      } else if (aiUnavailable) {
+        setSubmissionResult({
+          variant: 'warning',
+          message: `Submission for "${activeCampaign.name}" was recorded, but AI verification could not run right now.`,
+          detail: 'Your proof was sent for manual review instead — this can take longer to approve.',
+        });
+      } else {
+        setSubmissionResult({
+          variant: 'success',
+          message: `Submission for "${activeCampaign.name}" was recorded and is awaiting verification.`,
+          detail: submission.reviewNote,
+        });
+      }
       setActiveCampaign(null);
       resetForm();
-      setUploadInfo('');
     } catch (error) {
       const message =
         error && typeof error === 'object' && 'data' in error
@@ -66,23 +96,37 @@ export default function WorkerCampaignsPage() {
     }
   }
 
-  async function handleGenerateUploadUrl(setFieldValue: (field: string, value: string) => void) {
+  async function handleProofFileSelect(file: File | undefined, setFieldValue: (field: string, value: string) => void) {
+    if (!file) return;
     setSubmitError('');
-    setUploadInfo('');
+    setUploadingProof(true);
     try {
-      const result = await createProofUploadUrl({
-        fileName: `proof-${Date.now()}.jpg`,
-        contentType: 'image/jpeg',
+      const { uploadUrl, publicUrl } = await createProofUploadUrl({
+        fileName: file.name,
+        contentType: file.type,
         campaignId: activeCampaign?.id,
       }).unwrap();
-      setFieldValue('proofUrl', result.publicUrl);
-      setUploadInfo('Signed upload URL created. Upload the screenshot with uploadUrl, then keep publicUrl as proof URL.');
+
+      const putResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      if (!putResponse.ok) {
+        throw new Error('Screenshot upload to storage failed. Please try again.');
+      }
+
+      setFieldValue('proofUrl', publicUrl);
     } catch (error) {
       const message =
         error && typeof error === 'object' && 'data' in error
           ? (error as { data?: { message?: string } }).data?.message
-          : undefined;
-      setSubmitError(message ?? 'Unable to create a signed upload URL.');
+          : error instanceof Error
+            ? error.message
+            : undefined;
+      setSubmitError(message ?? 'Unable to upload screenshot proof.');
+    } finally {
+      setUploadingProof(false);
     }
   }
 
@@ -100,9 +144,10 @@ export default function WorkerCampaignsPage() {
         </Card.Body>
       </Card>
 
-      {successMessage && (
-        <Alert variant="success" dismissible onClose={() => setSuccessMessage('')}>
-          {successMessage}
+      {submissionResult && (
+        <Alert variant={submissionResult.variant} dismissible onClose={() => setSubmissionResult(null)}>
+          <div className="fw-semibold">{submissionResult.message}</div>
+          {submissionResult.detail && <div className="small mt-1 mb-0">{submissionResult.detail}</div>}
         </Alert>
       )}
 
@@ -119,6 +164,8 @@ export default function WorkerCampaignsPage() {
                   reward={`Earn ${formatMoney(campaign.rewardPerPostMinor)}`}
                   period={`Expires in ${daysRemaining(campaign.endDate)} days`}
                   workers={`${campaign.workersJoined} / ${campaign.maximumWorkers} workers`}
+                  thumbnailUrl={campaign.mediaVariants[0]?.mediaUrl}
+                  thumbnailType={campaign.mediaVariants[0]?.mediaType}
                 />
                 <Button variant="dark" onClick={() => setActiveCampaign(campaign)}>
                   Claim task
@@ -137,9 +184,31 @@ export default function WorkerCampaignsPage() {
           <div className="px-3 pt-3">
             <Card className="border-0 bg-light rounded-4 mb-0">
               <Card.Body className="p-3">
-                <p className="text-primary fw-semibold mb-1">Assigned content pool</p>
-                <p className="fw-semibold mb-2">Use the media/caption combo you receive from the system</p>
-                <div className="small text-secondary mb-2">Random variant assignment happens on the backend for each submission.</div>
+                <p className="text-primary fw-semibold mb-1">Content pool</p>
+                <p className="fw-semibold mb-2">Copy a caption and use its matching media to post</p>
+                <Row className="g-2">
+                  {activeCampaign.mediaVariants.map((variant, index) => (
+                    <Col xs={12} sm={6} key={index}>
+                      <div className="bg-white border rounded-3 p-2 h-100 d-flex flex-column gap-2">
+                        {variant.mediaType === 'VIDEO' ? (
+                          <video src={variant.mediaUrl} controls className="rounded-2 w-100" style={{ maxHeight: 140, objectFit: 'cover' }} />
+                        ) : (
+                          <img
+                            src={variant.mediaUrl}
+                            alt={`Campaign media ${index + 1}`}
+                            className="rounded-2 w-100"
+                            style={{ maxHeight: 140, objectFit: 'cover' }}
+                          />
+                        )}
+                        <p className="small text-secondary mb-0 flex-grow-1">{variant.caption}</p>
+                        <Button type="button" variant="outline-secondary" size="sm" onClick={() => handleCopyCaption(index, variant.caption)}>
+                          {copiedVariantIndex === index ? 'Copied!' : 'Copy caption'}
+                        </Button>
+                      </div>
+                    </Col>
+                  ))}
+                </Row>
+                <div className="small text-secondary mt-2 mb-0">Pick any variant above, post it to your group, then submit proof below.</div>
               </Card.Body>
             </Card>
           </div>
@@ -149,17 +218,12 @@ export default function WorkerCampaignsPage() {
           validationSchema={buildValidationSchema(activeCampaign)}
           onSubmit={(values, helpers) => handleSubmit(values, helpers.resetForm).finally(() => helpers.setSubmitting(false))}
         >
-          {({ isSubmitting, setFieldValue }) => (
+          {({ isSubmitting, values, setFieldValue }) => (
             <Form noValidate>
               <Modal.Body>
                 {submitError && (
                   <Alert variant="danger" className="py-2 small">
                     {submitError}
-                  </Alert>
-                )}
-                {uploadInfo && (
-                  <Alert variant="info" className="py-2 small">
-                    {uploadInfo}
                   </Alert>
                 )}
                 <BsForm.Group className="mb-3" controlId="groupId">
@@ -175,18 +239,27 @@ export default function WorkerCampaignsPage() {
                   <ErrorMessage name="groupId" component="div" className="text-danger small mt-1" />
                 </BsForm.Group>
                 <BsForm.Group className="mb-3" controlId="proofUrl">
-                  <BsForm.Label className="fw-semibold small">Screenshot proof URL</BsForm.Label>
-                  <Field name="proofUrl" as={BsForm.Control} placeholder="https://storage.googleapis.com/..." />
-                  <Button
-                    type="button"
-                    variant="outline-secondary"
-                    size="sm"
-                    className="mt-2"
-                    disabled={generatingUploadUrl}
-                    onClick={() => handleGenerateUploadUrl(setFieldValue)}
-                  >
-                    {generatingUploadUrl ? 'Generating upload URL…' : 'Generate signed upload URL'}
-                  </Button>
+                  <BsForm.Label className="fw-semibold small">Screenshot proof</BsForm.Label>
+                  <BsForm.Control
+                    type="file"
+                    accept="image/*"
+                    disabled={uploadingProof}
+                    onChange={(event) => {
+                      const input = event.target as HTMLInputElement;
+                      void handleProofFileSelect(input.files?.[0], setFieldValue);
+                      input.value = '';
+                    }}
+                  />
+                  {uploadingProof && (
+                    <div className="d-flex align-items-center gap-2 text-secondary small mt-1">
+                      <Spinner animation="border" size="sm" /> Uploading screenshot…
+                    </div>
+                  )}
+                  {values.proofUrl && (
+                    <div className="mt-2">
+                      <img src={values.proofUrl} alt="Screenshot proof preview" className="rounded-3 border" style={{ maxHeight: 140 }} />
+                    </div>
+                  )}
                   <ErrorMessage name="proofUrl" component="div" className="text-danger small mt-1" />
                 </BsForm.Group>
                 <BsForm.Group className="mb-3" controlId="facebookPostUrl">

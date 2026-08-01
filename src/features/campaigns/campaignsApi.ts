@@ -1,5 +1,5 @@
 import { baseApi } from '@/api/baseApi';
-import type { Campaign, CampaignStatus, CreateCampaignRequest } from '@/types/campaign';
+import type { Campaign, CampaignMediaUploadResponse, CampaignStatus, CreateCampaignRequest } from '@/types/campaign';
 
 export const campaignsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -19,6 +19,13 @@ export const campaignsApi = baseApi.injectEndpoints({
     createCampaign: builder.mutation<Campaign, CreateCampaignRequest>({
       query: (body) => ({ url: '/campaigns', method: 'POST', body }),
       invalidatesTags: [{ type: 'Campaign', id: 'LIST' }],
+    }),
+    uploadCampaignMedia: builder.mutation<CampaignMediaUploadResponse, File>({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return { url: '/campaigns/media-upload', method: 'POST', body: formData };
+      },
     }),
     pauseCampaign: builder.mutation<Campaign, { id: string }>({
       query: ({ id }) => ({ url: `/campaigns/${id}/pause`, method: 'POST' }),
@@ -44,6 +51,7 @@ export const {
   useGetCampaignsQuery,
   useGetCampaignByIdQuery,
   useCreateCampaignMutation,
+  useUploadCampaignMediaMutation,
   usePauseCampaignMutation,
   useResumeCampaignMutation,
   useDuplicateCampaignMutation,
