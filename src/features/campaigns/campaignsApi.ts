@@ -43,6 +43,9 @@ export const campaignsApi = baseApi.injectEndpoints({
       query: ({ id }) => ({ url: `/campaigns/${id}/archive`, method: 'POST' }),
       invalidatesTags: (_result, _error, arg) => [{ type: 'Campaign', id: arg.id }, { type: 'Campaign', id: 'LIST' }],
     }),
+    getMediaSignedUrl: builder.mutation<{ signedUrl: string; expiresAt: string }, string>({
+      query: (objectKey) => ({ url: '/campaigns/media-signed-url', method: 'POST', body: { objectKey } }),
+    }),
   }),
   overrideExisting: false,
 });
@@ -56,4 +59,5 @@ export const {
   useResumeCampaignMutation,
   useDuplicateCampaignMutation,
   useArchiveCampaignMutation,
+  useGetMediaSignedUrlMutation,
 } = campaignsApi;

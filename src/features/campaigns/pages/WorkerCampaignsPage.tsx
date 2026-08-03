@@ -5,8 +5,9 @@ import * as Yup from 'yup';
 import { CampaignCard } from '@/components/campaigns/CampaignCard';
 import { useGetCampaignsQuery } from '@/features/campaigns/campaignsApi';
 import { useGetGroupsQuery } from '@/features/groups/groupsApi';
-import { useCreateProofUploadUrlMutation, useCreateSubmissionMutation } from '@/features/submissions/submissionsApi';
+import { useCreateSubmissionMutation, useUploadProofMutation } from '@/features/submissions/submissionsApi';
 import { formatMoney, daysRemaining } from '@/utils/format';
+import { SignedCampaignMedia } from '@/components/common/SignedMedia';
 import type { Campaign } from '@/types/campaign';
 
 interface SubmissionFormValues {
@@ -35,7 +36,7 @@ export default function WorkerCampaignsPage() {
   const { data: campaigns, isLoading } = useGetCampaignsQuery({ status: 'ACTIVE' });
   const { data: groups } = useGetGroupsQuery({ status: 'APPROVED' });
   const [createSubmission] = useCreateSubmissionMutation();
-  const [createProofUploadUrl] = useCreateProofUploadUrlMutation();
+  const [uploadProof] = useUploadProofMutation();
   const [activeCampaign, setActiveCampaign] = useState<Campaign | null>(null);
   const [submissionResult, setSubmissionResult] = useState<{
     variant: 'success' | 'warning';
@@ -101,22 +102,11 @@ export default function WorkerCampaignsPage() {
     setSubmitError('');
     setUploadingProof(true);
     try {
-      const { uploadUrl, publicUrl } = await createProofUploadUrl({
-        fileName: file.name,
-        contentType: file.type,
-        campaignId: activeCampaign?.id,
+      const { proofUrl } = await uploadProof({
+        file,
+        campaignId: activeCampaign?.id ? Number(activeCampaign.id) : undefined,
       }).unwrap();
-
-      const putResponse = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      });
-      if (!putResponse.ok) {
-        throw new Error('Screenshot upload to storage failed. Please try again.');
-      }
-
-      setFieldValue('proofUrl', publicUrl);
+      setFieldValue('proofUrl', proofUrl);
     } catch (error) {
       const message =
         error && typeof error === 'object' && 'data' in error
@@ -190,16 +180,15 @@ export default function WorkerCampaignsPage() {
                   {activeCampaign.mediaVariants.map((variant, index) => (
                     <Col xs={12} sm={6} key={index}>
                       <div className="bg-white border rounded-3 p-2 h-100 d-flex flex-column gap-2">
-                        {variant.mediaType === 'VIDEO' ? (
-                          <video src={variant.mediaUrl} controls className="rounded-2 w-100" style={{ maxHeight: 140, objectFit: 'cover' }} />
-                        ) : (
-                          <img
-                            src={variant.mediaUrl}
-                            alt={`Campaign media ${index + 1}`}
-                            className="rounded-2 w-100"
-                            style={{ maxHeight: 140, objectFit: 'cover' }}
-                          />
-                        )}
+                        <SignedCampaignMedia
+                          objectKeyOrUrl={variant.mediaUrl}
+                          mediaType={variant.mediaType}
+                          alt={`Campaign media ${index + 1}`}
+                          className="rounded-2 w-100"
+                          style={{ maxHeight: 140, objectFit: 'cover' }}
+                          showDownload
+                          downloadFileName={`campaign-${index + 1}.${variant.mediaType === 'VIDEO' ? 'mp4' : 'jpg'}`}
+                        />
                         <p className="small text-secondary mb-0 flex-grow-1">{variant.caption}</p>
                         <Button type="button" variant="outline-secondary" size="sm" onClick={() => handleCopyCaption(index, variant.caption)}>
                           {copiedVariantIndex === index ? 'Copied!' : 'Copy caption'}

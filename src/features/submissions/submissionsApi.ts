@@ -45,6 +45,17 @@ export const submissionsApi = baseApi.injectEndpoints({
         { type: 'Wallet', id: 'ME' },
       ],
     }),
+    getProofSignedUrl: builder.query<{ signedUrl: string; expiresAt: string }, string>({
+      query: (id) => ({ url: `/submissions/${id}/proof-url` }),
+    }),
+    uploadProof: builder.mutation<{ proofUrl: string; objectKey: string }, { file: File; campaignId?: number }>({
+      query: ({ file, campaignId }) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const url = campaignId ? `/submissions/proof-upload?campaignId=${campaignId}` : '/submissions/proof-upload';
+        return { url, method: 'POST', body: formData };
+      },
+    }),
   }),
   overrideExisting: false,
 });
@@ -54,4 +65,6 @@ export const {
   useCreateProofUploadUrlMutation,
   useCreateSubmissionMutation,
   useReviewSubmissionMutation,
+  useGetProofSignedUrlQuery,
+  useUploadProofMutation,
 } = submissionsApi;

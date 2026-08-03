@@ -5,17 +5,6 @@ import { StatusBadge } from '@/components/common/StatusBadge';
 import { useGetSubmissionsQuery } from '@/features/submissions/submissionsApi';
 import { formatMoney, formatDate } from '@/utils/format';
 
-function toPercent(value: number | null): string {
-  if (value === null) return '—';
-  const normalized = value <= 1 ? Math.round(value * 100) : Math.round(value);
-  return `${normalized}%`;
-}
-
-function riskPercent(value: number | null): string {
-  if (value === null) return '0%';
-  return `${value <= 1 ? Math.round(value * 100) : Math.round(value)}%`;
-}
-
 export default function WorkerSubmissionsPage() {
   const user = useAppSelector((state) => state.auth.user);
   const { data: submissions, isLoading } = useGetSubmissionsQuery(user ? { workerId: user.id } : undefined);
@@ -88,8 +77,6 @@ export default function WorkerSubmissionsPage() {
                     <th>Group</th>
                     <th>Submitted</th>
                     <th>Reward</th>
-                    <th>AI confidence</th>
-                    <th>Fraud</th>
                     <th>Status</th>
                     <th className="pe-4">Note</th>
                   </tr>
@@ -103,14 +90,7 @@ export default function WorkerSubmissionsPage() {
                       <td>{submission.groupName}</td>
                       <td>{formatDate(submission.submittedAt)}</td>
                       <td>{formatMoney(submission.rewardMinor)}</td>
-                      <td>{toPercent(submission.verificationConfidence)}</td>
-                      <td>
-                        {submission.flaggedForFraud ? (
-                          <span className="text-danger fw-semibold">Flagged ({riskPercent(submission.fraudRiskScore)})</span>
-                        ) : (
-                          <span className="text-success">Clear</span>
-                        )}
-                      </td>
+                      
                       <td>
                         <StatusBadge status={submission.status} />
                       </td>

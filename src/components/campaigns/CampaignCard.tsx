@@ -1,5 +1,6 @@
 import { Badge, Card, Stack } from 'react-bootstrap';
 import { CalendarDays, CircleDollarSign, Users, Sparkles } from 'lucide-react';
+import { SignedCampaignMedia } from '@/components/common/SignedMedia';
 
 interface CampaignCardProps {
   name: string;
@@ -15,12 +16,15 @@ interface CampaignCardProps {
 export function CampaignCard({ name, category, reward, period, workers, status = 'Active', thumbnailUrl, thumbnailType }: CampaignCardProps) {
   return (
     <Card className="border-0 shadow-sm rounded-4 overflow-hidden">
-      {thumbnailUrl &&
-        (thumbnailType === 'VIDEO' ? (
-          <video src={thumbnailUrl} className="w-100" style={{ height: 140, objectFit: 'cover' }} muted />
-        ) : (
-          <Card.Img src={thumbnailUrl} style={{ height: 140, objectFit: 'cover' }} />
-        ))}
+      {thumbnailUrl && (
+        <SignedCampaignMedia
+          objectKeyOrUrl={thumbnailUrl}
+          mediaType={thumbnailType ?? 'IMAGE'}
+          alt={name}
+          className="w-100"
+          style={{ height: 140, objectFit: 'cover' }}
+        />
+      )}
       <Card.Body className="p-4">
         <div className="d-flex align-items-start justify-content-between gap-3">
           <div>

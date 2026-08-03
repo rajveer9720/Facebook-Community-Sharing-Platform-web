@@ -3,6 +3,7 @@ import { Alert, Badge, Button, Card, Col, Row, Spinner, Stack, Table } from 'rea
 import { ShieldCheck, FileSearch, Sparkles } from 'lucide-react';
 import { StatCard } from '@/components/common/StatCard';
 import { StatusBadge } from '@/components/common/StatusBadge';
+import { SignedProofImage } from '@/components/common/SignedMedia';
 import { useGetSubmissionsQuery, useReviewSubmissionMutation } from '@/features/submissions/submissionsApi';
 import { formatMoney, formatDate } from '@/utils/format';
 import type { ReviewDecision } from '@/types/submission';
@@ -160,13 +161,17 @@ export default function ReviewQueuePage() {
                       <td>{submission.groupName}</td>
                       <td>
                         {submission.proofUrl ? (
-                          <a href={submission.proofUrl} target="_blank" rel="noreferrer">
-                            View proof
-                          </a>
+                          <>
+                            <SignedProofImage
+                              submissionId={submission.id}
+                              className="rounded-2 border"
+                              style={{ maxHeight: 60, maxWidth: 80, objectFit: 'cover', display: 'block', marginBottom: 4 }}
+                            />
+                            <div className="text-secondary small">{formatDate(submission.submittedAt)}</div>
+                          </>
                         ) : (
                           <span className="text-secondary">No proof URL</span>
                         )}
-                        <div className="text-secondary small">{formatDate(submission.submittedAt)}</div>
                       </td>
                       <td>{formatMoney(submission.rewardMinor)}</td>
                       <td>
