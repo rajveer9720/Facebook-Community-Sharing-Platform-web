@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Button, Container, Nav, Navbar, Offcanvas } from 'react-bootstrap';
-import { Home, Briefcase, ClipboardList, Wallet, Trophy, Layers3, UserCircle2, LogOut, ShieldAlert } from 'lucide-react';
+import { Home, Briefcase, ClipboardList, Wallet, Trophy, Layers3, UserCircle2, LogOut, ShieldAlert, Bell } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { useLogoutMutation } from '@/features/auth/authApi';
 import { signedOut } from '@/features/auth/authSlice';
@@ -16,6 +16,7 @@ const workerNavItems = [
   { to: ROUTES.worker.submissions, label: 'Submissions', end: false, icon: ClipboardList },
   { to: ROUTES.worker.groups, label: 'My groups', end: false, icon: Layers3 },
   { to: ROUTES.worker.wallet, label: 'Wallet', end: false, icon: Wallet },
+  { to: ROUTES.worker.notifications, label: 'Notifications', end: false, icon: Bell },
   { to: ROUTES.worker.leaderboard, label: 'Leaderboard', end: false, icon: Trophy },
 ];
 
@@ -100,7 +101,7 @@ export function AppLayout() {
               <UserCircle2 size={18} />
               <span className="text-start">
                 <span className="d-block fw-semibold">{user?.firstName} {user?.lastName}</span>
-                <span className="small text-secondary text-uppercase">{user?.role}</span>
+                <span className="small text-uppercase">{user?.role}</span>
               </span>
             </Button>
           </div>

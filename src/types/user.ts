@@ -42,6 +42,11 @@ export interface ForgotPasswordResponse {
   resetToken: string | null;
 }
 
+export interface ResetPasswordRequest {
+  resetToken: string;
+  newPassword: string;
+}
+
 export interface AuthMessageResponse {
   message: string;
 }

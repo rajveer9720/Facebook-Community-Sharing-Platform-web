@@ -14,6 +14,7 @@ import {
   useForgotPasswordMutation,
   useLoginMutation,
   useRegisterMutation,
+  useResetPasswordMutation,
 } from "./authApi";
 import { sessionEstablished } from "./authSlice";
 import { ROUTES } from "@/routes/routePaths";
@@ -100,12 +101,18 @@ export default function LoginPage({ audience = "ALL" }: LoginPageProps) {
   const [register] = useRegisterMutation();
   const [forgotPassword, { isLoading: isForgotSubmitting }] =
     useForgotPasswordMutation();
+  const [resetPassword, { isLoading: isResetSubmitting }] =
+    useResetPasswordMutation();
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [formError, setFormError] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState("");
   const [forgotPasswordError, setForgotPasswordError] = useState("");
+  const [resetToken, setResetToken] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [resetPasswordMessage, setResetPasswordMessage] = useState("");
+  const [resetPasswordError, setResetPasswordError] = useState("");
   const content = loginContent[audience];
 
   async function handleSubmit(
@@ -189,6 +196,9 @@ export default function LoginPage({ audience = "ALL" }: LoginPageProps) {
           ? `${response.message}. Reset token: ${response.resetToken}`
           : response.message,
       );
+      if (response.resetToken) {
+        setResetToken(response.resetToken);
+      }
     } catch (error) {
       const message =
         error && typeof error === "object" && "data" in error
@@ -197,6 +207,34 @@ export default function LoginPage({ audience = "ALL" }: LoginPageProps) {
       setForgotPasswordError(
         message ?? "Unable to process forgot password right now.",
       );
+    }
+  }
+
+  async function handleResetPasswordSubmit(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+    setResetPasswordError("");
+    setResetPasswordMessage("");
+
+    if (!resetToken.trim() || !newPassword) {
+      setResetPasswordError("Enter the reset token and a new password.");
+      return;
+    }
+
+    try {
+      const response = await resetPassword({
+        resetToken: resetToken.trim(),
+        newPassword,
+      }).unwrap();
+      setResetPasswordMessage(response.message);
+      setNewPassword("");
+    } catch (error) {
+      const message =
+        error && typeof error === "object" && "data" in error
+          ? (error as { data?: { message?: string } }).data?.message
+          : undefined;
+      setResetPasswordError(message ?? "Unable to reset password right now.");
     }
   }
 
@@ -369,6 +407,67 @@ export default function LoginPage({ audience = "ALL" }: LoginPageProps) {
                           disabled={isForgotSubmitting}
                         >
                           {isForgotSubmitting ? "Sending…" : "Send reset token"}
+                        </Button>
+                      </BsForm>
+
+                      <hr className="my-3" />
+
+                      <p className="mb-2 small fw-semibold">Reset password</p>
+                      <BsForm onSubmit={handleResetPasswordSubmit}>
+                        <BsForm.Group
+                          className="mb-2"
+                          controlId="resetToken"
+                        >
+                          <BsForm.Label className="small">
+                            Reset token
+                          </BsForm.Label>
+                          <BsForm.Control
+                            type="text"
+                            value={resetToken}
+                            onChange={(event) =>
+                              setResetToken(event.target.value)
+                            }
+                            placeholder="Paste the reset token"
+                          />
+                        </BsForm.Group>
+                        <BsForm.Group
+                          className="mb-2"
+                          controlId="newPassword"
+                        >
+                          <BsForm.Label className="small">
+                            New password
+                          </BsForm.Label>
+                          <BsForm.Control
+                            type="password"
+                            value={newPassword}
+                            onChange={(event) =>
+                              setNewPassword(event.target.value)
+                            }
+                            placeholder="At least 8 characters"
+                          />
+                        </BsForm.Group>
+                        {resetPasswordError && (
+                          <Alert
+                            variant="danger"
+                            className="py-2 px-3 small mb-2"
+                          >
+                            {resetPasswordError}
+                          </Alert>
+                        )}
+                        {resetPasswordMessage && (
+                          <Alert
+                            variant="success"
+                            className="py-2 px-3 small mb-2"
+                          >
+                            {resetPasswordMessage}
+                          </Alert>
+                        )}
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={isResetSubmitting}
+                        >
+                          {isResetSubmitting ? "Resetting…" : "Reset password"}
                         </Button>
                       </BsForm>
                     </div>

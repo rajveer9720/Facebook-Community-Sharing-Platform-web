@@ -1,12 +1,10 @@
 export interface NotificationItem {
-  id: string;
-  title: string;
-  detail: string;
+  id: number;
+  userId: number;
   type: string;
-  readAt: string | null;
+  title: string;
+  message: string;
+  read: boolean;
+  metadata: Record<string, unknown> | null;
   createdAt: string;
-}
-
-export interface NotificationsResponse {
-  items: NotificationItem[];
 }

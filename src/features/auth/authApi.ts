@@ -9,6 +9,7 @@ import type {
   RefreshRequest,
   RefreshResponse,
   RegisterRequest,
+  ResetPasswordRequest,
 } from '@/types/user';
 
 export const authApi = baseApi.injectEndpoints({
@@ -28,6 +29,9 @@ export const authApi = baseApi.injectEndpoints({
     forgotPassword: builder.mutation<ForgotPasswordResponse, ForgotPasswordRequest>({
       query: (body) => ({ url: '/auth/forgot-password', method: 'POST', body }),
     }),
+    resetPassword: builder.mutation<AuthMessageResponse, ResetPasswordRequest>({
+      query: (body) => ({ url: '/auth/reset-password', method: 'POST', body }),
+    }),
   }),
   overrideExisting: false,
 });
@@ -38,4 +42,5 @@ export const {
   useRefreshMutation,
   useLogoutMutation,
   useForgotPasswordMutation,
+  useResetPasswordMutation,
 } = authApi;

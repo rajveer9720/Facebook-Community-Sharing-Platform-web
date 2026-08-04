@@ -14,7 +14,7 @@ export default function WorkerNotificationsPage() {
   const { data, isLoading } = useGetMyNotificationsQuery();
   const [markRead, { isLoading: marking }] = useMarkNotificationReadMutation();
 
-  async function handleMarkRead(id: string) {
+  async function handleMarkRead(id: number) {
     await markRead({ id }).unwrap();
   }
 
@@ -37,11 +37,11 @@ export default function WorkerNotificationsPage() {
             </div>
           ) : (
             <ListGroup variant="flush">
-              {data?.items.length ? (
-                data.items.map((item) => {
+              {data?.length ? (
+                data.map((item) => {
                   const Icon = iconForType(item.type.toLowerCase());
-                  const toneClass = item.readAt ? 'bg-secondary-subtle' : 'bg-primary-subtle';
-                  const iconClass = item.readAt ? 'text-secondary' : 'text-primary';
+                  const toneClass = item.read ? 'bg-secondary-subtle' : 'bg-primary-subtle';
+                  const iconClass = item.read ? 'text-secondary' : 'text-primary';
                   return (
                     <ListGroup.Item key={item.id} className="px-4 py-3 d-flex gap-3 align-items-start">
                       <div className={`rounded-circle p-2 ${toneClass}`}>
@@ -52,8 +52,8 @@ export default function WorkerNotificationsPage() {
                           <h2 className="fs-6 fw-semibold mb-1">{item.title}</h2>
                           <span className="text-secondary small">{formatDate(item.createdAt)}</span>
                         </div>
-                        <p className="text-secondary mb-2">{item.detail}</p>
-                        {!item.readAt && (
+                        <p className="text-secondary mb-2">{item.message}</p>
+                        {!item.read && (
                           <Button size="sm" variant="outline-secondary" disabled={marking} onClick={() => handleMarkRead(item.id)}>
                             Mark as read
                           </Button>
