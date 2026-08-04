@@ -119,7 +119,12 @@ export default function AdminDashboardPage() {
 
       <Card className="border-0 shadow-sm rounded-4 mt-3">
         <Card.Body className="p-4">
-          <p className="text-primary fw-semibold mb-1">Worker performance</p>
+          <div className="d-flex justify-content-between align-items-start gap-3">
+            <p className="text-primary fw-semibold mb-1">Worker performance</p>
+            <Link className="btn btn-outline-secondary btn-sm" to={ROUTES.admin.workers}>
+              View all workers <ArrowRight size={16} />
+            </Link>
+          </div>
           {performanceLoading ? (
             <Spinner animation="border" size="sm" />
           ) : (

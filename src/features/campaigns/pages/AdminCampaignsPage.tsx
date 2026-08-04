@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Button, Card, Col, Row, Spinner, Stack } from 'react-bootstrap';
-import { Plus, BarChart3, Copy, PauseCircle, PlayCircle, Archive } from 'lucide-react';
+import { Plus, BarChart3, Copy, PauseCircle, PlayCircle, Archive, Pencil, Rocket } from 'lucide-react';
 import { CampaignCard } from '@/components/campaigns/CampaignCard';
 import {
+  useActivateCampaignMutation,
   useArchiveCampaignMutation,
   useDuplicateCampaignMutation,
   useGetCampaignsQuery,
@@ -16,6 +17,7 @@ import type { Campaign } from '@/types/campaign';
 
 export default function AdminCampaignsPage() {
   const { data: campaigns, isLoading } = useGetCampaignsQuery();
+  const [activateCampaign] = useActivateCampaignMutation();
   const [pauseCampaign] = usePauseCampaignMutation();
   const [resumeCampaign] = useResumeCampaignMutation();
   const [duplicateCampaign] = useDuplicateCampaignMutation();
@@ -23,6 +25,24 @@ export default function AdminCampaignsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [processingId, setProcessingId] = useState<string | null>(null);
+
+  async function handleActivate(campaign: Campaign) {
+    setError('');
+    setSuccess('');
+    setProcessingId(campaign.id);
+    try {
+      await activateCampaign({ id: campaign.id }).unwrap();
+      setSuccess(`${campaign.name} activated successfully.`);
+    } catch (actionError) {
+      const message =
+        actionError && typeof actionError === 'object' && 'data' in actionError
+          ? (actionError as { data?: { message?: string } }).data?.message
+          : undefined;
+      setError(message ?? 'Unable to activate this campaign right now.');
+    } finally {
+      setProcessingId(null);
+    }
+  }
 
   async function handlePause(campaign: Campaign) {
     setError('');
@@ -64,6 +84,7 @@ export default function AdminCampaignsPage() {
     setError('');
     setSuccess('');
     setProcessingId(campaign.id);
+    
     try {
       await duplicateCampaign({ id: campaign.id }).unwrap();
       setSuccess(`${campaign.name} duplicated successfully.`);
@@ -138,42 +159,47 @@ export default function AdminCampaignsPage() {
         <Row className="g-3 mt-1">
           {campaigns?.map((campaign) => (
             <Col key={campaign.id} md={6} lg={4}>
-              <div className="d-flex flex-column gap-2 h-100">
-                <CampaignCard
-                  name={campaign.name}
-                  category={campaign.category}
-                  reward={`${formatMoney(campaign.rewardPerPostMinor)} per post`}
-                  period={`${daysRemaining(campaign.endDate)} days remaining`}
-                  workers={`${campaign.workersJoined} / ${campaign.maximumWorkers} workers`}
-                  status={campaign.status}
-                />
-                <Card className="border-0 bg-light-subtle rounded-4">
-                  <Card.Body className="py-3 px-3 small">
-                    <div className="d-flex justify-content-between">
-                      <span className="text-secondary">Spent</span>
-                      <span className="fw-semibold">{formatMoney(campaign.spentMinor, campaign.currency)}</span>
-                    </div>
-                    <div className="d-flex justify-content-between mt-1">
-                      <span className="text-secondary">Remaining</span>
-                      <span className="fw-semibold">{formatMoney(campaign.remainingBudgetMinor, campaign.currency)}</span>
-                    </div>
-                    {campaign.endingSoonNotifiedAt && (
-                      <div className="text-warning-emphasis mt-2">Ending soon alert sent</div>
-                    )}
-                    {campaign.archivedAt && <div className="text-secondary mt-2">Archived</div>}
-                  </Card.Body>
-                </Card>
-                <div className="d-grid gap-2">
+              <CampaignCard
+                name={campaign.name}
+                category={campaign.category}
+                reward={`${formatMoney(campaign.rewardPerPostMinor)} per post`}
+                period={`${daysRemaining(campaign.endDate)} days remaining`}
+                workers={`${campaign.workersJoined} / ${campaign.maximumWorkers} workers`}
+                status={campaign.status}
+              >
+                <div className="d-flex justify-content-between small">
+                  <span className="text-secondary">Spent</span>
+                  <span className="fw-semibold">{formatMoney(campaign.spentMinor, campaign.currency)}</span>
+                </div>
+                <div className="d-flex justify-content-between small mt-1">
+                  <span className="text-secondary">Remaining</span>
+                  <span className="fw-semibold">{formatMoney(campaign.remainingBudgetMinor, campaign.currency)}</span>
+                </div>
+                {campaign.endingSoonNotifiedAt && (
+                  <div className="text-warning-emphasis small mt-2">Ending soon alert sent</div>
+                )}
+                {campaign.archivedAt && <div className="text-secondary small mt-2">Archived</div>}
+
+                <div className="d-flex align-items-center gap-2 mt-3">
+                  <Link
+                    to={`/admin/campaigns/${campaign.id}/edit`}
+                    className="btn btn-outline-dark btn-sm rounded-circle d-inline-flex align-items-center justify-content-center p-0 flex-shrink-0"
+                    style={{ width: 32, height: 32 }}
+                    title="Edit"
+                  >
+                    <Pencil size={14} />
+                  </Link>
                   {campaign.status === 'ACTIVE' ? (
                     <Button
                       variant="outline-warning"
                       size="sm"
                       disabled={processingId === campaign.id}
                       onClick={() => handlePause(campaign)}
-                      className="d-flex justify-content-center align-items-center gap-2"
+                      className="rounded-circle d-inline-flex align-items-center justify-content-center p-0 flex-shrink-0"
+                      style={{ width: 32, height: 32 }}
+                      title="Pause"
                     >
-                      <PauseCircle size={16} />
-                      Pause campaign
+                      <PauseCircle size={14} />
                     </Button>
                   ) : campaign.status === 'PAUSED' ? (
                     <Button
@@ -181,14 +207,33 @@ export default function AdminCampaignsPage() {
                       size="sm"
                       disabled={processingId === campaign.id}
                       onClick={() => handleResume(campaign)}
-                      className="d-flex justify-content-center align-items-center gap-2"
+                      className="rounded-circle d-inline-flex align-items-center justify-content-center p-0 flex-shrink-0"
+                      style={{ width: 32, height: 32 }}
+                      title="Resume"
                     >
-                      <PlayCircle size={16} />
-                      Resume campaign
+                      <PlayCircle size={14} />
+                    </Button>
+                  ) : campaign.status === 'DRAFT' ? (
+                    <Button
+                      variant="outline-success"
+                      size="sm"
+                      disabled={processingId === campaign.id}
+                      onClick={() => handleActivate(campaign)}
+                      className="rounded-circle d-inline-flex align-items-center justify-content-center p-0 flex-shrink-0"
+                      style={{ width: 32, height: 32 }}
+                      title="Activate"
+                    >
+                      <Rocket size={14} />
                     </Button>
                   ) : (
-                    <Button variant="outline-secondary" size="sm" disabled>
-                      Status locked
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      className="rounded-pill px-2 flex-shrink-0"
+                      style={{ fontSize: 11 }}
+                      disabled
+                    >
+                      Locked
                     </Button>
                   )}
                   <Button
@@ -196,10 +241,11 @@ export default function AdminCampaignsPage() {
                     size="sm"
                     disabled={processingId === campaign.id}
                     onClick={() => handleDuplicate(campaign)}
-                    className="d-flex justify-content-center align-items-center gap-2"
+                    className="rounded-circle d-inline-flex align-items-center justify-content-center p-0 flex-shrink-0"
+                    style={{ width: 32, height: 32 }}
+                    title="Duplicate"
                   >
-                    <Copy size={16} />
-                    Duplicate campaign
+                    <Copy size={14} />
                   </Button>
                   {campaign.status !== 'ARCHIVED' && (
                     <Button
@@ -207,14 +253,15 @@ export default function AdminCampaignsPage() {
                       size="sm"
                       disabled={processingId === campaign.id}
                       onClick={() => handleArchive(campaign)}
-                      className="d-flex justify-content-center align-items-center gap-2"
+                      className="rounded-circle d-inline-flex align-items-center justify-content-center p-0 flex-shrink-0"
+                      style={{ width: 32, height: 32 }}
+                      title="Archive"
                     >
-                      <Archive size={16} />
-                      Archive campaign
+                      <Archive size={14} />
                     </Button>
                   )}
                 </div>
-              </div>
+              </CampaignCard>
             </Col>
           ))}
         </Row>

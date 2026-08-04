@@ -18,6 +18,7 @@ export default function LeaderboardPage() {
 
   return (
     <div className="mx-auto" style={{ maxWidth: 720 }}>
+      <p className="text-primary fw-semibold mb-1">Community ranking</p>
       <h1 className="fs-3 fw-bold">Leaderboard</h1>
       <p className="text-secondary">Rankings based on approved posts and total earnings.</p>
 

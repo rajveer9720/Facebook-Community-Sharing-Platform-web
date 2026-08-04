@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Badge, Card, Stack } from 'react-bootstrap';
 import { CalendarDays, CircleDollarSign, Users, Sparkles } from 'lucide-react';
 import { SignedCampaignMedia } from '@/components/common/SignedMedia';
@@ -11,9 +12,10 @@ interface CampaignCardProps {
   status?: string;
   thumbnailUrl?: string;
   thumbnailType?: 'IMAGE' | 'VIDEO';
+  children?: ReactNode;
 }
 
-export function CampaignCard({ name, category, reward, period, workers, status = 'Active', thumbnailUrl, thumbnailType }: CampaignCardProps) {
+export function CampaignCard({ name, category, reward, period, workers, status = 'Active', thumbnailUrl, thumbnailType, children }: CampaignCardProps) {
   return (
     <Card className="border-0 shadow-sm rounded-4 overflow-hidden">
       {thumbnailUrl && (
@@ -58,6 +60,7 @@ export function CampaignCard({ name, category, reward, period, workers, status =
             {workers}
           </span>
         </Stack>
+        {children && <div className="border-top mt-3 pt-3">{children}</div>}
       </Card.Body>
     </Card>
   );

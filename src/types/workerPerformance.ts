@@ -1,6 +1,7 @@
 export interface WorkerPerformance {
-  workerId: string;
+  workerId: number;
   workerName?: string;
+  email?: string;
   approvalRate: number;
   rejectionRate: number;
   duplicateRate: number;

@@ -8,9 +8,11 @@ import LoginPage from '@/features/auth/LoginPage';
 import WorkerDashboardPage from '@/features/dashboard/WorkerDashboardPage';
 import WorkerProfilePage from '@/features/profile/pages/WorkerProfilePage';
 import AdminDashboardPage from '@/features/dashboard/AdminDashboardPage';
+import AdminWorkersPage from '@/features/workerPerformance/pages/AdminWorkersPage';
 import WorkerCampaignsPage from '@/features/campaigns/pages/WorkerCampaignsPage';
 import AdminCampaignsPage from '@/features/campaigns/pages/AdminCampaignsPage';
 import NewCampaignPage from '@/features/campaigns/pages/NewCampaignPage';
+import EditCampaignPage from '@/features/campaigns/pages/EditCampaignPage';
 import WorkerGroupsPage from '@/features/groups/pages/WorkerGroupsPage';
 import AdminGroupsPage from '@/features/groups/pages/AdminGroupsPage';
 import WorkerSubmissionsPage from '@/features/submissions/pages/WorkerSubmissionsPage';
@@ -52,8 +54,10 @@ const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: ROUTES.admin.root, element: <AdminDashboardPage /> },
+          { path: ROUTES.admin.workers, element: <AdminWorkersPage /> },
           { path: ROUTES.admin.campaigns, element: <AdminCampaignsPage /> },
           { path: ROUTES.admin.newCampaign, element: <NewCampaignPage /> },
+          { path: ROUTES.admin.editCampaign, element: <EditCampaignPage /> },
           { path: ROUTES.admin.review, element: <ReviewQueuePage /> },
           { path: ROUTES.admin.groups, element: <AdminGroupsPage /> },
           { path: ROUTES.admin.withdrawals, element: <WithdrawalsPage /> },

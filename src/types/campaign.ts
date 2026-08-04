@@ -76,6 +76,8 @@ export interface CreateCampaignRequest {
   autoApprovalEnabled: boolean;
 }
 
+export type UpdateCampaignRequest = Partial<CreateCampaignRequest>;
+
 export interface CampaignMediaUploadResponse {
   mediaUrl: string;
   objectKey: string;

@@ -166,50 +166,52 @@ export default function WorkerCampaignsPage() {
         </Row>
       )}
 
-      <Modal show={Boolean(activeCampaign)} onHide={() => setActiveCampaign(null)} centered>
+      <Modal show={Boolean(activeCampaign)} onHide={() => setActiveCampaign(null)} centered scrollable>
         <Modal.Header closeButton>
           <Modal.Title className="fs-5">Submit proof &mdash; {activeCampaign?.name}</Modal.Title>
         </Modal.Header>
-        {activeCampaign && activeCampaign.mediaVariants.length > 0 && (
-          <div className="px-3 pt-3">
-            <Card className="border-0 bg-light rounded-4 mb-0">
-              <Card.Body className="p-3">
-                <p className="text-primary fw-semibold mb-1">Content pool</p>
-                <p className="fw-semibold mb-2">Copy a caption and use its matching media to post</p>
-                <Row className="g-2">
-                  {activeCampaign.mediaVariants.map((variant, index) => (
-                    <Col xs={12} sm={6} key={index}>
-                      <div className="bg-white border rounded-3 p-2 h-100 d-flex flex-column gap-2">
-                        <SignedCampaignMedia
-                          objectKeyOrUrl={variant.mediaUrl}
-                          mediaType={variant.mediaType}
-                          alt={`Campaign media ${index + 1}`}
-                          className="rounded-2 w-100"
-                          style={{ maxHeight: 140, objectFit: 'cover' }}
-                          showDownload
-                          downloadFileName={`campaign-${index + 1}.${variant.mediaType === 'VIDEO' ? 'mp4' : 'jpg'}`}
-                        />
-                        <p className="small text-secondary mb-0 flex-grow-1">{variant.caption}</p>
-                        <Button type="button" variant="outline-secondary" size="sm" onClick={() => handleCopyCaption(index, variant.caption)}>
-                          {copiedVariantIndex === index ? 'Copied!' : 'Copy caption'}
-                        </Button>
-                      </div>
-                    </Col>
-                  ))}
-                </Row>
-                <div className="small text-secondary mt-2 mb-0">Pick any variant above, post it to your group, then submit proof below.</div>
-              </Card.Body>
-            </Card>
-          </div>
-        )}
         <Formik<SubmissionFormValues>
           initialValues={{ groupId: '', proofUrl: '', facebookPostUrl: '', groupName: '', caption: '' }}
           validationSchema={buildValidationSchema(activeCampaign)}
           onSubmit={(values, helpers) => handleSubmit(values, helpers.resetForm).finally(() => helpers.setSubmitting(false))}
         >
           {({ isSubmitting, values, setFieldValue }) => (
-            <Form noValidate>
+            <Form
+              noValidate
+              className="d-flex flex-column"
+              style={{ flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}
+            >
               <Modal.Body>
+                {activeCampaign && activeCampaign.mediaVariants.length > 0 && (
+                  <Card className="border-0 bg-light rounded-4 mb-3">
+                    <Card.Body className="p-3">
+                      <p className="text-primary fw-semibold mb-1">Content pool</p>
+                      <p className="fw-semibold mb-2">Copy a caption and use its matching media to post</p>
+                      <Row className="g-2">
+                        {activeCampaign.mediaVariants.map((variant, index) => (
+                          <Col xs={12} sm={6} key={index}>
+                            <div className="bg-white border rounded-3 p-2 h-100 d-flex flex-column gap-2">
+                              <SignedCampaignMedia
+                                objectKeyOrUrl={variant.mediaUrl}
+                                mediaType={variant.mediaType}
+                                alt={`Campaign media ${index + 1}`}
+                                className="rounded-2 w-100"
+                                style={{ maxHeight: 140, objectFit: 'cover' }}
+                                showDownload
+                                downloadFileName={`campaign-${index + 1}.${variant.mediaType === 'VIDEO' ? 'mp4' : 'jpg'}`}
+                              />
+                              <p className="small text-secondary mb-0 flex-grow-1">{variant.caption}</p>
+                              <Button type="button" variant="outline-secondary" size="sm" onClick={() => handleCopyCaption(index, variant.caption)}>
+                                {copiedVariantIndex === index ? 'Copied!' : 'Copy caption'}
+                              </Button>
+                            </div>
+                          </Col>
+                        ))}
+                      </Row>
+                      <div className="small text-secondary mt-2 mb-0">Pick any variant above, post it to your group, then submit proof below.</div>
+                    </Card.Body>
+                  </Card>
+                )}
                 {submitError && (
                   <Alert variant="danger" className="py-2 small">
                     {submitError}

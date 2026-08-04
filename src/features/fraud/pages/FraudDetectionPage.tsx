@@ -9,6 +9,12 @@ function normalizeRiskScore(value: number | null): number {
   return value <= 1 ? value * 100 : value;
 }
 
+function riskLevel(score: number): 'High' | 'Medium' | 'Flagged' {
+  if (score >= 85) return 'High';
+  if (score >= 65) return 'Medium';
+  return 'Flagged';
+}
+
 function formatFraudSignals(signals: Record<string, unknown>): string {
   const entries = Object.entries(signals);
   if (entries.length === 0) {
@@ -27,8 +33,8 @@ export default function FraudDetectionPage() {
     .sort((a, b) => normalizeRiskScore(b.fraudRiskScore) - normalizeRiskScore(a.fraudRiskScore))
     .slice(0, 8);
 
-  const highRiskCount = suspicious.filter((entry) => normalizeRiskScore(entry.fraudRiskScore) >= 85).length;
-  const mediumRiskCount = suspicious.filter((entry) => normalizeRiskScore(entry.fraudRiskScore) >= 65 && normalizeRiskScore(entry.fraudRiskScore) < 85).length;
+  const highRiskCount = suspicious.filter((entry) => riskLevel(normalizeRiskScore(entry.fraudRiskScore)) === 'High').length;
+  const mediumRiskCount = suspicious.filter((entry) => riskLevel(normalizeRiskScore(entry.fraudRiskScore)) === 'Medium').length;
 
   return (
     <div>
@@ -110,7 +116,16 @@ export default function FraudDetectionPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {suspicious.map((row) => (
+                  {suspicious.map((row) => {
+                    const level = riskLevel(normalizeRiskScore(row.fraudRiskScore));
+                    const badgeBg = level === 'High' ? 'danger' : level === 'Medium' ? 'warning' : 'secondary';
+                    const badgeClass =
+                      level === 'High'
+                        ? 'bg-danger-subtle text-danger-emphasis'
+                        : level === 'Medium'
+                          ? 'bg-warning-subtle text-warning-emphasis'
+                          : 'bg-secondary-subtle text-secondary-emphasis';
+                    return (
                     <tr key={row.id}>
                       <td className="ps-4 fw-semibold">{row.workerName}</td>
                       <td>{row.campaignName}</td>
@@ -118,18 +133,16 @@ export default function FraudDetectionPage() {
                       <td>{formatDate(row.submittedAt)}</td>
                       <td>{Math.round(normalizeRiskScore(row.fraudRiskScore))}</td>
                       <td className="pe-4">
-                        <Badge
-                          bg={normalizeRiskScore(row.fraudRiskScore) >= 85 ? 'danger' : 'warning'}
-                          className={normalizeRiskScore(row.fraudRiskScore) >= 85 ? 'bg-danger-subtle text-danger-emphasis' : 'bg-warning-subtle text-warning-emphasis'}
-                        >
-                          {normalizeRiskScore(row.fraudRiskScore) >= 85 ? 'High' : 'Medium'}
+                        <Badge bg={badgeBg} className={badgeClass}>
+                          {level}
                         </Badge>
                         {Object.keys(row.fraudSignals).length > 0 && (
                           <div className="small text-secondary mt-1">{formatFraudSignals(row.fraudSignals)}</div>
                         )}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </Table>
             </div>

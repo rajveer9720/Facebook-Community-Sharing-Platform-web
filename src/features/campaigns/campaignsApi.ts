@@ -1,5 +1,11 @@
 import { baseApi } from '@/api/baseApi';
-import type { Campaign, CampaignMediaUploadResponse, CampaignStatus, CreateCampaignRequest } from '@/types/campaign';
+import type {
+  Campaign,
+  CampaignMediaUploadResponse,
+  CampaignStatus,
+  CreateCampaignRequest,
+  UpdateCampaignRequest,
+} from '@/types/campaign';
 
 export const campaignsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -20,12 +26,20 @@ export const campaignsApi = baseApi.injectEndpoints({
       query: (body) => ({ url: '/campaigns', method: 'POST', body }),
       invalidatesTags: [{ type: 'Campaign', id: 'LIST' }],
     }),
+    updateCampaign: builder.mutation<Campaign, { id: string; body: UpdateCampaignRequest }>({
+      query: ({ id, body }) => ({ url: `/campaigns/${id}`, method: 'PATCH', body }),
+      invalidatesTags: (_result, _error, arg) => [{ type: 'Campaign', id: arg.id }, { type: 'Campaign', id: 'LIST' }],
+    }),
     uploadCampaignMedia: builder.mutation<CampaignMediaUploadResponse, File>({
       query: (file) => {
         const formData = new FormData();
         formData.append('file', file);
         return { url: '/campaigns/media-upload', method: 'POST', body: formData };
       },
+    }),
+    activateCampaign: builder.mutation<Campaign, { id: string }>({
+      query: ({ id }) => ({ url: `/campaigns/${id}/activate`, method: 'POST' }),
+      invalidatesTags: (_result, _error, arg) => [{ type: 'Campaign', id: arg.id }, { type: 'Campaign', id: 'LIST' }],
     }),
     pauseCampaign: builder.mutation<Campaign, { id: string }>({
       query: ({ id }) => ({ url: `/campaigns/${id}/pause`, method: 'POST' }),
@@ -54,7 +68,9 @@ export const {
   useGetCampaignsQuery,
   useGetCampaignByIdQuery,
   useCreateCampaignMutation,
+  useUpdateCampaignMutation,
   useUploadCampaignMediaMutation,
+  useActivateCampaignMutation,
   usePauseCampaignMutation,
   useResumeCampaignMutation,
   useDuplicateCampaignMutation,

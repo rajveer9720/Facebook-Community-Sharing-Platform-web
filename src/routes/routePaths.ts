@@ -15,8 +15,10 @@ export const ROUTES = {
   },
   admin: {
     root: '/admin',
+    workers: '/admin/workers',
     campaigns: '/admin/campaigns',
     newCampaign: '/admin/campaigns/new',
+    editCampaign: '/admin/campaigns/:id/edit',
     review: '/admin/review',
     groups: '/admin/groups',
     withdrawals: '/admin/withdrawals',
