@@ -9,14 +9,14 @@ import {
 } from "react-bootstrap";
 import { Formik, Form, Field, ErrorMessage, type FormikHelpers } from "formik";
 import * as Yup from "yup";
-import { useAppDispatch } from "@/app/hooks";
+import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import {
   useForgotPasswordMutation,
   useLoginMutation,
   useRegisterMutation,
   useResetPasswordMutation,
 } from "./authApi";
-import { sessionEstablished } from "./authSlice";
+import { sessionEstablished, sessionExpiredNoticeDismissed } from "./authSlice";
 import { ROUTES } from "@/routes/routePaths";
 import type { UserRole } from "@/types/common";
 
@@ -97,6 +97,7 @@ const loginContent: Record<
 export default function LoginPage({ audience = "ALL" }: LoginPageProps) {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const sessionExpired = useAppSelector((state) => state.auth.sessionExpired);
   const [login] = useLoginMutation();
   const [register] = useRegisterMutation();
   const [forgotPassword, { isLoading: isForgotSubmitting }] =
@@ -251,6 +252,17 @@ export default function LoginPage({ audience = "ALL" }: LoginPageProps) {
         <Card.Body className="p-4 p-sm-5">
           <p className="text-primary fw-semibold mb-1">{content.badge}</p>
           <h1 className="fs-3 fw-bold mb-4">{content.title}</h1>
+
+          {sessionExpired && (
+            <Alert
+              variant="warning"
+              className="py-2 small"
+              dismissible
+              onClose={() => dispatch(sessionExpiredNoticeDismissed())}
+            >
+              Your session has expired. Please sign in again.
+            </Alert>
+          )}
 
           {audience === "WORKER" && (
             <div className="d-flex gap-2 mb-3">

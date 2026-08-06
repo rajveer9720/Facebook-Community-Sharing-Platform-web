@@ -5,6 +5,7 @@ import { clearSession, readSession, writeSession } from '@/utils/session';
 interface AuthState {
   user: AuthUser | null;
   accessToken: string | null;
+  sessionExpired: boolean;
 }
 
 const existingSession = readSession();
@@ -12,6 +13,7 @@ const existingSession = readSession();
 const initialState: AuthState = {
   user: existingSession?.user ?? null,
   accessToken: existingSession?.accessToken ?? null,
+  sessionExpired: false,
 };
 
 const authSlice = createSlice({
@@ -21,6 +23,7 @@ const authSlice = createSlice({
     sessionEstablished: (state, action: PayloadAction<LoginResponse>) => {
       state.user = action.payload.user;
       state.accessToken = action.payload.accessToken;
+      state.sessionExpired = false;
       writeSession({
         accessToken: action.payload.accessToken,
         refreshToken: action.payload.refreshToken,
@@ -30,10 +33,20 @@ const authSlice = createSlice({
     signedOut: (state) => {
       state.user = null;
       state.accessToken = null;
+      state.sessionExpired = false;
       clearSession();
+    },
+    sessionTimedOut: (state) => {
+      state.user = null;
+      state.accessToken = null;
+      state.sessionExpired = true;
+      clearSession();
+    },
+    sessionExpiredNoticeDismissed: (state) => {
+      state.sessionExpired = false;
     },
   },
 });
 
-export const { sessionEstablished, signedOut } = authSlice.actions;
+export const { sessionEstablished, signedOut, sessionTimedOut, sessionExpiredNoticeDismissed } = authSlice.actions;
 export const authReducer = authSlice.reducer;

@@ -64,7 +64,7 @@ export default function AdminCampaignsPage() {
 
   async function handleResume(campaign: Campaign) {
     setError('');
-    setSuccess('');
+     setSuccess('');
     setProcessingId(campaign.id);
     try {
       await resumeCampaign({ id: campaign.id }).unwrap();

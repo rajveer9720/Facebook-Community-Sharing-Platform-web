@@ -24,7 +24,7 @@ export const groupsApi = baseApi.injectEndpoints({
       providesTags: [{ type: 'Group', id: 'COVERAGE' }],
     }),
     getWorkerGroupLibrary: builder.query<WorkerGroupLibraryEntry[], void>({
-      query: () => ({ url: '/groups/recommendations', method: 'POST', body: {} }),
+      query: () => ({ url: '/groups/library' }),
       providesTags: [{ type: 'GroupLibrary', id: 'LIST' }],
     }),
     getGroupRecommendations: builder.mutation<WorkerGroupLibraryEntry[], GroupRecommendationsRequest | void>({

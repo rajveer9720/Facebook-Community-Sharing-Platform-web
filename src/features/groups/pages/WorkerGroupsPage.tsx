@@ -5,6 +5,7 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { useGetWorkerGroupLibraryQuery, useSubmitGroupDiscoveryMutation } from '@/features/groups/groupsApi';
 import { formatDate } from '@/utils/format';
+import { CAMPAIGN_CATEGORIES } from '@/types/campaign';
 
 interface DiscoveryFormValues {
   name: string;
@@ -175,10 +176,11 @@ export default function WorkerGroupsPage() {
                 <BsForm.Group className="mb-3" controlId="discoveryCategory">
                   <BsForm.Label className="fw-semibold small">Category</BsForm.Label>
                   <Field name="category" as={BsForm.Select}>
-                    <option>Technology</option>
-                    <option>Business</option>
-                    <option>Finance</option>
-                    <option>Jobs</option>
+                    {CAMPAIGN_CATEGORIES.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
                   </Field>
                 </BsForm.Group>
                 <BsForm.Group className="mb-3" controlId="discoveryCountry">

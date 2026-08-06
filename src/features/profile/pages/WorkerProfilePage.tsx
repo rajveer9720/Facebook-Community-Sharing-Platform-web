@@ -78,7 +78,7 @@ export default function WorkerProfilePage() {
                   <Trophy size={16} />
                   <span className="small fw-semibold">Fraud risk</span>
                 </div>
-                <p className="fs-4 fw-bold mb-0">{Math.round((performance?.fraudRiskScore ?? 0) * 100)}%</p>
+                <p className="fs-4 fw-bold mb-0">{Math.round(performance?.fraudRiskScore ?? 0)}%</p>
               </Card.Body>
             </Card>
           </Col>

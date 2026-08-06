@@ -1,4 +1,4 @@
-import { Badge, Card, Col, Row, Spinner, Table } from 'react-bootstrap';
+import { Badge, Card, Col, OverlayTrigger, Row, Spinner, Table, Tooltip } from 'react-bootstrap';
 import { AlertTriangle, Fingerprint, ScanSearch, ShieldAlert } from 'lucide-react';
 import { useGetSubmissionsQuery } from '@/features/submissions/submissionsApi';
 import { useGetGroupCoverageQuery } from '@/features/groups/groupsApi';
@@ -137,7 +137,17 @@ export default function FraudDetectionPage() {
                           {level}
                         </Badge>
                         {Object.keys(row.fraudSignals).length > 0 && (
-                          <div className="small text-secondary mt-1">{formatFraudSignals(row.fraudSignals)}</div>
+                          <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip id={`fraud-signals-${row.id}`}>{formatFraudSignals(row.fraudSignals)}</Tooltip>}
+                          >
+                            <div
+                              className="small text-secondary mt-1 text-truncate"
+                              style={{ maxWidth: 280, cursor: 'help' }}
+                            >
+                              {formatFraudSignals(row.fraudSignals)}
+                            </div>
+                          </OverlayTrigger>
                         )}
                       </td>
                     </tr>
