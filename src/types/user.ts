@@ -1,11 +1,24 @@
 import type { UserRole } from './common';
 
+export interface PermissionPair {
+  action: string;
+  subject: string;
+}
+
+export interface StaffRoleSummary {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface AuthUser {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
   role: UserRole;
+  permissions: PermissionPair[];
+  staffRole: StaffRoleSummary | null;
 }
 
 export interface LoginRequest {

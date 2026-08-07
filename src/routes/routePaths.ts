@@ -16,6 +16,7 @@ export const ROUTES = {
   admin: {
     root: '/admin',
     workers: '/admin/workers',
+    roles: '/admin/roles',
     campaigns: '/admin/campaigns',
     newCampaign: '/admin/campaigns/new',
     editCampaign: '/admin/campaigns/:id/edit',

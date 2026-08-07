@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProtectedRoute } from './ProtectedRoute';
+import { PermissionRoute } from './PermissionRoute';
 import { ROUTES } from './routePaths';
 
 import HomePage from '@/pages/HomePage';
@@ -9,6 +10,7 @@ import WorkerDashboardPage from '@/features/dashboard/WorkerDashboardPage';
 import WorkerProfilePage from '@/features/profile/pages/WorkerProfilePage';
 import AdminDashboardPage from '@/features/dashboard/AdminDashboardPage';
 import AdminWorkersPage from '@/features/workerPerformance/pages/AdminWorkersPage';
+import AdminRolesPage from '@/features/roles/pages/AdminRolesPage';
 import WorkerCampaignsPage from '@/features/campaigns/pages/WorkerCampaignsPage';
 import AdminCampaignsPage from '@/features/campaigns/pages/AdminCampaignsPage';
 import NewCampaignPage from '@/features/campaigns/pages/NewCampaignPage';
@@ -54,15 +56,45 @@ const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: ROUTES.admin.root, element: <AdminDashboardPage /> },
-          { path: ROUTES.admin.workers, element: <AdminWorkersPage /> },
-          { path: ROUTES.admin.campaigns, element: <AdminCampaignsPage /> },
-          { path: ROUTES.admin.newCampaign, element: <NewCampaignPage /> },
-          { path: ROUTES.admin.editCampaign, element: <EditCampaignPage /> },
-          { path: ROUTES.admin.review, element: <ReviewQueuePage /> },
-          { path: ROUTES.admin.groups, element: <AdminGroupsPage /> },
-          { path: ROUTES.admin.withdrawals, element: <WithdrawalsPage /> },
-          { path: ROUTES.admin.analytics, element: <AnalyticsPage /> },
-          { path: ROUTES.admin.fraud, element: <FraudDetectionPage /> },
+          {
+            element: <PermissionRoute action="read" subject="WorkerDirectory" />,
+            children: [{ path: ROUTES.admin.workers, element: <AdminWorkersPage /> }],
+          },
+          {
+            element: <PermissionRoute action="manage" subject="Staff" />,
+            children: [{ path: ROUTES.admin.roles, element: <AdminRolesPage /> }],
+          },
+          {
+            element: <PermissionRoute action="read" subject="Campaign" />,
+            children: [{ path: ROUTES.admin.campaigns, element: <AdminCampaignsPage /> }],
+          },
+          {
+            element: <PermissionRoute action="manage" subject="Campaign" />,
+            children: [
+              { path: ROUTES.admin.newCampaign, element: <NewCampaignPage /> },
+              { path: ROUTES.admin.editCampaign, element: <EditCampaignPage /> },
+            ],
+          },
+          {
+            element: <PermissionRoute action="read" subject="Submission" />,
+            children: [{ path: ROUTES.admin.review, element: <ReviewQueuePage /> }],
+          },
+          {
+            element: <PermissionRoute action="read" subject="Group" />,
+            children: [{ path: ROUTES.admin.groups, element: <AdminGroupsPage /> }],
+          },
+          {
+            element: <PermissionRoute action="review" subject="Withdrawal" />,
+            children: [{ path: ROUTES.admin.withdrawals, element: <WithdrawalsPage /> }],
+          },
+          {
+            element: <PermissionRoute action="read" subject="FinanceAnalytics" />,
+            children: [{ path: ROUTES.admin.analytics, element: <AnalyticsPage /> }],
+          },
+          {
+            element: <PermissionRoute action="read" subject="FraudSignal" />,
+            children: [{ path: ROUTES.admin.fraud, element: <FraudDetectionPage /> }],
+          },
         ],
       },
     ],

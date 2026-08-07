@@ -13,6 +13,7 @@ import {
   ShieldAlert,
   Bell,
   Users,
+  KeyRound,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { useLogoutMutation } from "@/features/auth/authApi";
@@ -20,6 +21,8 @@ import { signedOut } from "@/features/auth/authSlice";
 import { ROUTES } from "@/routes/routePaths";
 import { BottomNav, type BottomNavItem } from "@/components/layout/BottomNav";
 import { readSession } from "@/utils/session";
+import { useAbility } from "@/casl/AbilityContext";
+import type { PermissionPair } from "@/types/user";
 
 const workerNavItems = [
   { to: ROUTES.worker.root, label: "Dashboard", end: true, icon: Home },
@@ -57,34 +60,71 @@ const workerNavItems = [
   },
 ];
 
-const adminNavItems = [
+interface AdminNavItem {
+  to: string;
+  label: string;
+  end: boolean;
+  icon: typeof Home;
+  permission?: PermissionPair;
+}
+
+const adminNavItems: AdminNavItem[] = [
   { to: ROUTES.admin.root, label: "Overview", end: true, icon: Home },
-  { to: ROUTES.admin.workers, label: "Workers", end: false, icon: Users },
+  {
+    to: ROUTES.admin.workers,
+    label: "Workers",
+    end: false,
+    icon: Users,
+    permission: { action: "read", subject: "WorkerDirectory" },
+  },
   {
     to: ROUTES.admin.campaigns,
     label: "Campaigns",
     end: false,
     icon: Briefcase,
+    permission: { action: "read", subject: "Campaign" },
   },
   {
     to: ROUTES.admin.review,
     label: "Review queue",
     end: false,
     icon: ClipboardList,
+    permission: { action: "read", subject: "Submission" },
   },
-  { to: ROUTES.admin.groups, label: "Groups", end: false, icon: Layers3 },
+  {
+    to: ROUTES.admin.groups,
+    label: "Groups",
+    end: false,
+    icon: Layers3,
+    permission: { action: "read", subject: "Group" },
+  },
   {
     to: ROUTES.admin.withdrawals,
     label: "Withdrawals",
     end: false,
     icon: Wallet,
+    permission: { action: "review", subject: "Withdrawal" },
   },
-  { to: ROUTES.admin.analytics, label: "Analytics", end: false, icon: Trophy },
+  {
+    to: ROUTES.admin.analytics,
+    label: "Analytics",
+    end: false,
+    icon: Trophy,
+    permission: { action: "read", subject: "FinanceAnalytics" },
+  },
   {
     to: ROUTES.admin.fraud,
     label: "Fraud desk",
     end: false,
     icon: ShieldAlert,
+    permission: { action: "read", subject: "FraudSignal" },
+  },
+  {
+    to: ROUTES.admin.roles,
+    label: "Roles",
+    end: false,
+    icon: KeyRound,
+    permission: { action: "manage", subject: "Staff" },
   },
 ];
 
@@ -109,10 +149,13 @@ export function AppLayout() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const user = useAppSelector((state) => state.auth.user);
+  const ability = useAbility();
   const [showProfile, setShowProfile] = useState(false);
   const [logout] = useLogoutMutation();
   const isAdmin = user?.role === "ADMIN";
-  const navItems = isAdmin ? adminNavItems : workerNavItems;
+  const navItems = isAdmin
+    ? adminNavItems.filter((item) => !item.permission || ability.can(item.permission.action, item.permission.subject))
+    : workerNavItems;
   const bottomNavItems = isAdmin ? adminBottomNavItems : workerBottomNavItems;
 
   async function handleLogout() {

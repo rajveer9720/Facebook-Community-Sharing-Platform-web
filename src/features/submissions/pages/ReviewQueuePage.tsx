@@ -4,6 +4,7 @@ import { ShieldCheck, FileSearch, Sparkles } from 'lucide-react';
 import { StatCard } from '@/components/common/StatCard';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { SignedProofImage } from '@/components/common/SignedMedia';
+import { Can } from '@/casl/AbilityContext';
 import { useGetSubmissionsQuery, useReviewSubmissionMutation } from '@/features/submissions/submissionsApi';
 import { formatMoney, formatDate } from '@/utils/format';
 import type { ReviewDecision } from '@/types/submission';
@@ -198,32 +199,34 @@ export default function ReviewQueuePage() {
                         <StatusBadge status={submission.status} />
                       </td>
                       <td className="pe-4">
-                        <Stack direction="horizontal" gap={2}>
-                          <Button
-                            size="sm"
-                            variant="success"
-                            disabled={isReviewing && actioningId === submission.id}
-                            onClick={() => handleDecision(submission.id, 'APPROVE')}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            disabled={isReviewing && actioningId === submission.id}
-                            onClick={() => handleDecision(submission.id, 'REJECT')}
-                          >
-                            Reject
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline-secondary"
-                            disabled={isReviewing && actioningId === submission.id}
-                            onClick={() => handleDecision(submission.id, 'REQUEST_RESUBMISSION')}
-                          >
-                            Resubmit
-                          </Button>
-                        </Stack>
+                        <Can I="review" a="Submission">
+                          <Stack direction="horizontal" gap={2}>
+                            <Button
+                              size="sm"
+                              variant="success"
+                              disabled={isReviewing && actioningId === submission.id}
+                              onClick={() => handleDecision(submission.id, 'APPROVE')}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              disabled={isReviewing && actioningId === submission.id}
+                              onClick={() => handleDecision(submission.id, 'REJECT')}
+                            >
+                              Reject
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline-secondary"
+                              disabled={isReviewing && actioningId === submission.id}
+                              onClick={() => handleDecision(submission.id, 'REQUEST_RESUBMISSION')}
+                            >
+                              Resubmit
+                            </Button>
+                          </Stack>
+                        </Can>
                       </td>
                     </tr>
                   ))}

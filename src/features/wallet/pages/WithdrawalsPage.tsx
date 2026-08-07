@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Alert, Button, Card, Col, Row, Spinner, Stack, Table } from 'react-bootstrap';
 import { StatusBadge } from '@/components/common/StatusBadge';
+import { Can } from '@/casl/AbilityContext';
 import {
   useCompleteWithdrawalMutation,
   useGetWithdrawalsQuery,
@@ -104,7 +105,7 @@ export default function WithdrawalsPage() {
                         <td className="pe-4">
                           <Stack direction="horizontal" gap={2}>
                             {withdrawal.status === 'PENDING' && (
-                              <>
+                              <Can I="review" a="Withdrawal">
                                 <Button
                                   size="sm"
                                   variant="success"
@@ -119,12 +120,14 @@ export default function WithdrawalsPage() {
                                 >
                                   Reject
                                 </Button>
-                              </>
+                              </Can>
                             )}
                             {withdrawal.status === 'APPROVED' && (
-                              <Button size="sm" variant="dark" onClick={() => handleAction(completeWithdrawal({ id: withdrawal.id }).unwrap())}>
-                                Mark paid
-                              </Button>
+                              <Can I="complete" a="Withdrawal">
+                                <Button size="sm" variant="dark" onClick={() => handleAction(completeWithdrawal({ id: withdrawal.id }).unwrap())}>
+                                  Mark paid
+                                </Button>
+                              </Can>
                             )}
                           </Stack>
                         </td>

@@ -5,6 +5,7 @@ import { StatCard } from '@/components/common/StatCard';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { useGetGroupCoverageQuery, useGetGroupsQuery, useModerateGroupMutation, useUpdateGroupMutation } from '@/features/groups/groupsApi';
 import type { FacebookGroup } from '@/types/group';
+import { Can } from '@/casl/AbilityContext';
 
 export default function AdminGroupsPage() {
   const { data: coverage, isLoading: coverageLoading } = useGetGroupCoverageQuery();
@@ -166,36 +167,38 @@ export default function AdminGroupsPage() {
                         <StatusBadge status={group.status} />
                       </td>
                       <td className="pe-4">
-                        <Stack direction="horizontal" gap={2}>
-                          {group.status === 'PENDING' && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="success"
-                                disabled={(moderating || updating) && processingId === group.id}
-                                onClick={() => handleModerate(group, 'APPROVE')}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline-danger"
-                                disabled={(moderating || updating) && processingId === group.id}
-                                onClick={() => handleModerate(group, 'REJECT')}
-                              >
-                                Reject
-                              </Button>
-                            </>
-                          )}
-                          <Button
-                            size="sm"
-                            variant={group.blacklisted ? 'outline-secondary' : 'outline-warning'}
-                            disabled={(moderating || updating) && processingId === group.id}
-                            onClick={() => handleBlacklistToggle(group)}
-                          >
-                            {group.blacklisted ? 'Unblacklist' : 'Blacklist'}
-                          </Button>
-                        </Stack>
+                        <Can I="moderate" a="Group">
+                          <Stack direction="horizontal" gap={2}>
+                            {group.status === 'PENDING' && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="success"
+                                  disabled={(moderating || updating) && processingId === group.id}
+                                  onClick={() => handleModerate(group, 'APPROVE')}
+                                >
+                                  Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline-danger"
+                                  disabled={(moderating || updating) && processingId === group.id}
+                                  onClick={() => handleModerate(group, 'REJECT')}
+                                >
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              size="sm"
+                              variant={group.blacklisted ? 'outline-secondary' : 'outline-warning'}
+                              disabled={(moderating || updating) && processingId === group.id}
+                              onClick={() => handleBlacklistToggle(group)}
+                            >
+                              {group.blacklisted ? 'Unblacklist' : 'Blacklist'}
+                            </Button>
+                          </Stack>
+                        </Can>
                       </td>
                     </tr>
                   ))}

@@ -14,6 +14,7 @@ import {
 import { formatMoney, daysRemaining } from '@/utils/format';
 import { ROUTES } from '@/routes/routePaths';
 import type { Campaign } from '@/types/campaign';
+import { Can } from '@/casl/AbilityContext';
 
 export default function AdminCampaignsPage() {
   const { data: campaigns, isLoading } = useGetCampaignsQuery();
@@ -125,10 +126,12 @@ export default function AdminCampaignsPage() {
           <h1 className="fs-3 fw-bold">Campaigns</h1>
           <p className="text-secondary mb-0">Create, activate, pause and monitor distribution campaigns.</p>
         </div>
-        <Link to={ROUTES.admin.newCampaign} className="btn btn-dark d-inline-flex align-items-center gap-2">
-          <Plus size={18} />
-          New campaign
-        </Link>
+        <Can I="manage" a="Campaign">
+          <Link to={ROUTES.admin.newCampaign} className="btn btn-dark d-inline-flex align-items-center gap-2">
+            <Plus size={18} />
+            New campaign
+          </Link>
+        </Can>
       </Stack>
 
       <Card className="border-0 shadow-sm rounded-4 mt-4">
@@ -180,6 +183,7 @@ export default function AdminCampaignsPage() {
                 )}
                 {campaign.archivedAt && <div className="text-secondary small mt-2">Archived</div>}
 
+                <Can I="manage" a="Campaign">
                 <div className="d-flex align-items-center gap-2 mt-3">
                   <Link
                     to={`/admin/campaigns/${campaign.id}/edit`}
@@ -261,6 +265,7 @@ export default function AdminCampaignsPage() {
                     </Button>
                   )}
                 </div>
+                </Can>
               </CampaignCard>
             </Col>
           ))}

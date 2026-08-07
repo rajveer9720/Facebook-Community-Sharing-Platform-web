@@ -1,14 +1,18 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
-import type { RootState } from '@/app/store';
-import { sessionEstablished, sessionTimedOut } from '@/features/auth/authSlice';
-import { readSession } from '@/utils/session';
-import type { LoginResponse } from '@/types/user';
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import type {
+  BaseQueryFn,
+  FetchArgs,
+  FetchBaseQueryError,
+} from "@reduxjs/toolkit/query/react";
+import type { RootState } from "@/app/store";
+import { sessionEstablished, sessionTimedOut } from "@/features/auth/authSlice";
+import { readSession } from "@/utils/session";
+import type { LoginResponse } from "@/types/user";
 
-const NO_REAUTH_PATHS = ['/auth/refresh', '/auth/login'];
+const NO_REAUTH_PATHS = ["/auth/refresh", "/auth/login"];
 
 function requestUrl(args: string | FetchArgs): string {
-  return typeof args === 'string' ? args : args.url;
+  return typeof args === "string" ? args : args.url;
 }
 
 const rawBaseQuery = fetchBaseQuery({
@@ -16,20 +20,31 @@ const rawBaseQuery = fetchBaseQuery({
   prepareHeaders: (headers, { getState }) => {
     const accessToken = (getState() as RootState).auth.accessToken;
     if (accessToken) {
-      headers.set('Authorization', `Bearer ${accessToken}`);
+      headers.set("Authorization", `Bearer ${accessToken}`);
     }
     return headers;
   },
 });
 
-const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, api, extraOptions) => {
+const baseQueryWithReauth: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
   let result = await rawBaseQuery(args, api, extraOptions);
 
-  if (result.error?.status === 401 && !NO_REAUTH_PATHS.includes(requestUrl(args))) {
+  if (
+    result.error?.status === 401 &&
+    !NO_REAUTH_PATHS.includes(requestUrl(args))
+  ) {
     const refreshToken = readSession()?.refreshToken;
 
     if (refreshToken) {
-      const refreshResult = await rawBaseQuery({ url: '/auth/refresh', method: 'POST', body: { refreshToken } }, api, extraOptions);
+      const refreshResult = await rawBaseQuery(
+        { url: "/auth/refresh", method: "POST", body: { refreshToken } },
+        api,
+        extraOptions,
+      );
 
       if (refreshResult.data) {
         api.dispatch(sessionEstablished(refreshResult.data as LoginResponse));
@@ -46,8 +61,19 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 };
 
 export const baseApi = createApi({
-  reducerPath: 'api',
+  reducerPath: "api",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Campaign', 'Group', 'GroupLibrary', 'Submission', 'Wallet', 'Withdrawal', 'Leaderboard', 'Notification', 'WorkerPerformance'],
+  tagTypes: [
+    "Campaign",
+    "Group",
+    "GroupLibrary",
+    "Submission",
+    "Wallet",
+    "Withdrawal",
+    "Leaderboard",
+    "Notification",
+    "WorkerPerformance",
+    "Role",
+  ],
   endpoints: () => ({}),
 });
