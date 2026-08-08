@@ -1,6 +1,6 @@
-import { CURRENCY, type MoneyMinor } from '@/types/common';
+import {  type MoneyMinor } from '@/types/common';
 
-export function formatMoney(amountMinor: MoneyMinor, currency: string = CURRENCY): string {
+export function formatMoney(amountMinor: MoneyMinor): string {
   return new Intl.NumberFormat('en-GB', {
     style: 'decimal',
     minimumFractionDigits: 2,

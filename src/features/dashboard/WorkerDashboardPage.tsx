@@ -87,7 +87,7 @@ export default function WorkerDashboardPage() {
           <Col xs={6} md={3}>
             <StatCard
               label="Wallet balance"
-              value={formatMoney(wallet?.availableMinor ?? 0, wallet?.currency)}
+              value={formatMoney(wallet?.availableMinor ?? 0)}
             />
           </Col>
         </Row>
