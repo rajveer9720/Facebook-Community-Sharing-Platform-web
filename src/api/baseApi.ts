@@ -74,6 +74,7 @@ export const baseApi = createApi({
     "Notification",
     "WorkerPerformance",
     "Role",
+    "Staff",
   ],
   endpoints: () => ({}),
 });
