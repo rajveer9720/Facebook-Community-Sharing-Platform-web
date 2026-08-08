@@ -1,7 +1,11 @@
 import { CURRENCY, type MoneyMinor } from '@/types/common';
 
 export function formatMoney(amountMinor: MoneyMinor, currency: string = CURRENCY): string {
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(amountMinor / 100);
+  return new Intl.NumberFormat('en-GB', {
+    style: 'decimal',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amountMinor / 100);
 }
 
 export function formatDate(iso: string): string {

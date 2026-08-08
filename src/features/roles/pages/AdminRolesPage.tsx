@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Badge, Button, Card, Modal, Spinner, Table } from 'react-bootstrap';
+import { Alert, Badge, Button, Card, Modal, OverlayTrigger, Spinner, Table, Tooltip } from 'react-bootstrap';
 import { Plus, Pencil, Trash2, ShieldCheck } from 'lucide-react';
 import {
   useCreateRoleMutation,
@@ -22,6 +22,34 @@ function toFormValues(role: Role): RoleFormValues {
   };
 }
 
+// Informational only — system roles are just seeded defaults, not delete-protected
+function RoleTypeBadge({ role }: { role: Role }) {
+  const tooltip = (
+    <Tooltip>
+      {role.isSystem
+        ? 'Built-in role seeded by default. Can still be edited or deleted by a super admin.'
+        : 'Custom role created by your team.'}
+    </Tooltip>
+  );
+
+  return (
+    <OverlayTrigger placement="top" overlay={tooltip}>
+      <Badge
+        bg={role.isSystem ? 'secondary' : 'light'}
+        text={role.isSystem ? undefined : 'dark'}
+        className={
+          role.isSystem
+            ? 'bg-secondary-subtle text-secondary-emphasis d-inline-flex align-items-center gap-1'
+            : 'border d-inline-flex align-items-center gap-1'
+        }
+      >
+        {role.isSystem && <ShieldCheck size={12} />}
+        {role.isSystem ? 'System' : 'Custom'}
+      </Badge>
+    </OverlayTrigger>
+  );
+}
+
 export default function AdminRolesPage() {
   const currentUser = useAppSelector((state) => state.auth.user);
   const { data: allRoles, isLoading } = useGetRolesQuery();
@@ -32,6 +60,8 @@ export default function AdminRolesPage() {
 
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
+  const [permissionsRole, setPermissionsRole] = useState<Role | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -65,18 +95,22 @@ export default function AdminRolesPage() {
     setShowModal(false);
   }
 
-  async function handleDelete(role: Role) {
+  async function confirmDelete() {
+    if (!roleToDelete) return;
     setError('');
     setSuccess('');
     try {
-      await deleteRole(role.id).unwrap();
-      setSuccess(`${role.name} deleted.`);
+      await deleteRole(roleToDelete.id).unwrap();
+      setSuccess(`${roleToDelete.name} deleted.`);
     } catch (actionError) {
       const message =
         actionError && typeof actionError === 'object' && 'data' in actionError
           ? (actionError as { data?: { message?: string } }).data?.message
           : undefined;
+      // e.g. backend's "Cannot delete a role that is still assigned to staff accounts"
       setError(message ?? 'Unable to delete this role right now.');
+    } finally {
+      setRoleToDelete(null);
     }
   }
 
@@ -111,41 +145,54 @@ export default function AdminRolesPage() {
             <div className="p-4">
               <Spinner animation="border" size="sm" />
             </div>
+          ) : !roles || roles.length === 0 ? (
+            <div className="p-4 text-secondary">No roles yet. Create one to get started.</div>
           ) : (
             <div className="table-responsive">
               <Table hover className="mb-0 align-middle">
                 <thead className="table-light">
                   <tr>
                     <th className="ps-4">Role</th>
+                    <th>Type</th>
                     <th>Description</th>
                     <th>Permissions</th>
                     <th className="pe-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {roles?.map((role) => (
+                  {roles.map((role) => (
                     <tr key={role.id}>
-                      <td className="ps-4 fw-semibold">
-                        <div className="d-flex align-items-center gap-2">
-                          {role.name}
-                          {role.isSystem && (
-                            <Badge bg="secondary" className="bg-secondary-subtle text-secondary-emphasis d-inline-flex align-items-center gap-1">
-                              <ShieldCheck size={12} />
-                              System
-                            </Badge>
-                          )}
-                        </div>
+                      <td className="ps-4 fw-semibold">{role.name}</td>
+                      <td>
+                        <RoleTypeBadge role={role} />
                       </td>
                       <td className="text-secondary">{role.description || '—'}</td>
-                      <td>{role.permissions.length}</td>
+                      <td>
+                        {role.permissions.length === 0 ? (
+                          <span className="text-secondary">No permissions</span>
+                        ) : (
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="p-0 text-decoration-none"
+                            onClick={() => setPermissionsRole(role)}
+                          >
+                            {role.permissions.length} permission{role.permissions.length === 1 ? '' : 's'}
+                          </Button>
+                        )}
+                      </td>
                       <td className="pe-4">
                         <div className="d-flex gap-2">
-                          <Button variant="outline-secondary" size="sm" onClick={() => openEdit(role)} title="Edit">
-                            <Pencil size={14} />
-                          </Button>
-                          <Button variant="outline-danger" size="sm" title="Delete" onClick={() => handleDelete(role)}>
-                            <Trash2 size={14} />
-                          </Button>
+                          <OverlayTrigger placement="top" overlay={<Tooltip>Edit role</Tooltip>}>
+                            <Button variant="outline-secondary" size="sm" onClick={() => openEdit(role)}>
+                              <Pencil size={14} />
+                            </Button>
+                          </OverlayTrigger>
+                          <OverlayTrigger placement="top" overlay={<Tooltip>Delete role</Tooltip>}>
+                            <Button variant="outline-danger" size="sm" onClick={() => setRoleToDelete(role)}>
+                              <Trash2 size={14} />
+                            </Button>
+                          </OverlayTrigger>
                         </div>
                       </td>
                     </tr>
@@ -157,6 +204,7 @@ export default function AdminRolesPage() {
         </Card.Body>
       </Card>
 
+      {/* Create / edit role */}
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered scrollable>
         <Modal.Header closeButton>
           <Modal.Title className="fs-5">{editingRole ? `Edit ${editingRole.name}` : 'Create role'}</Modal.Title>
@@ -168,6 +216,52 @@ export default function AdminRolesPage() {
             submittingLabel="Saving…"
             onSubmit={handleSubmit}
           />
+        </Modal.Body>
+      </Modal>
+
+      {/* Delete confirmation */}
+      <Modal show={!!roleToDelete} onHide={() => setRoleToDelete(null)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="fs-5">Delete role</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to delete <strong>{roleToDelete?.name}</strong>?
+          {roleToDelete?.isSystem && (
+            <>
+              {' '}
+              This is a built-in system role — deleting it can affect default permission setup.
+            </>
+          )}{' '}
+          Staff members assigned to this role will lose the permissions it grants. This can’t be undone.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={() => setRoleToDelete(null)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={confirmDelete}>
+            Delete role
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* View permissions */}
+      <Modal show={!!permissionsRole} onHide={() => setPermissionsRole(null)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="fs-5">{permissionsRole?.name} permissions</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="d-flex flex-wrap gap-2">
+            {permissionsRole?.permissions.map((permission) => (
+              <Badge
+                key={permissionKey(permission.action, permission.subject)}
+                bg="light"
+                text="dark"
+                className="border fw-normal"
+              >
+                {permission.action} {permission.subject}
+              </Badge>
+            ))}
+          </div>
         </Modal.Body>
       </Modal>
     </div>
