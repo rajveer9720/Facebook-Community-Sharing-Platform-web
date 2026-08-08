@@ -172,11 +172,11 @@ export default function AdminCampaignsPage() {
               >
                 <div className="d-flex justify-content-between small">
                   <span className="text-secondary">Spent</span>
-                  <span className="fw-semibold">{formatMoney(campaign.spentMinor, campaign.currency)}</span>
+                  <span className="fw-semibold">{formatMoney(campaign.spentMinor)}</span>
                 </div>
                 <div className="d-flex justify-content-between small mt-1">
                   <span className="text-secondary">Remaining</span>
-                  <span className="fw-semibold">{formatMoney(campaign.remainingBudgetMinor, campaign.currency)}</span>
+                  <span className="fw-semibold">{formatMoney(campaign.remainingBudgetMinor)}</span>
                 </div>
                 {campaign.endingSoonNotifiedAt && (
                   <div className="text-warning-emphasis small mt-2">Ending soon alert sent</div>

@@ -67,7 +67,7 @@ export default function WorkerProfilePage() {
                   <WalletIcon size={16} />
                   <span className="small fw-semibold">Balance</span>
                 </div>
-                <p className="fs-4 fw-bold mb-0">{formatMoney(wallet?.availableMinor ?? 0, wallet?.currency)}</p>
+                <p className="fs-4 fw-bold mb-0">{formatMoney(wallet?.availableMinor ?? 0)}</p>
               </Card.Body>
             </Card>
           </Col>

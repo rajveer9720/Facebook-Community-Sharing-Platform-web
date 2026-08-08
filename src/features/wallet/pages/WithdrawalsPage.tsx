@@ -96,7 +96,7 @@ export default function WithdrawalsPage() {
                           </div>
                           <div className="text-secondary small">{withdrawal.worker.email}</div>
                         </td>
-                        <td>{formatMoney(withdrawal.amountMinor, withdrawal.currency)}</td>
+                        <td>{formatMoney(withdrawal.amountMinor)}</td>
                         <td>{withdrawal.paymentMethod}</td>
                         <td>{formatDate(withdrawal.requestedAt)}</td>
                         <td>

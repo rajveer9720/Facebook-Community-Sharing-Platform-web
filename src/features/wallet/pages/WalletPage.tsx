@@ -69,7 +69,7 @@ export default function WalletPage() {
               <Card className="border-0 shadow-sm rounded-4">
                 <Card.Body>
                   <p className="text-secondary small mb-1">{label}</p>
-                  <p className="fs-5 fw-semibold mb-0">{formatMoney(Number(value ?? 0), wallet?.currency)}</p>
+                  <p className="fs-5 fw-semibold mb-0">{formatMoney(Number(value ?? 0))}</p>
                 </Card.Body>
               </Card>
             </Col>
@@ -104,7 +104,7 @@ export default function WalletPage() {
             {({ isSubmitting }) => (
               <Form noValidate>
                 <BsForm.Group className="mb-3" controlId="amount">
-                  <BsForm.Label className="fw-semibold small">Amount (£)</BsForm.Label>
+                  <BsForm.Label className="fw-semibold small">Amount</BsForm.Label>
                   <Field name="amount" type="number" min="1" step="0.01" as={BsForm.Control} />
                   <ErrorMessage name="amount" component="div" className="text-danger small mt-1" />
                 </BsForm.Group>
